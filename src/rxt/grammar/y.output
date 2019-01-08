@@ -1,0 +1,708 @@
+
+state 0
+	$accept: .dataset $end 
+	eolo: .    (50)
+
+	EOL  shift 3
+	.  reduce 50 (src line 350)
+
+	dataset  goto 1
+	eolo  goto 2
+
+state 1
+	$accept:  dataset.$end 
+
+	$end  accept
+	.  error
+
+
+state 2
+	dataset:  eolo.DATASET BLK srvclso srvstko optblkr mainblk 
+
+	DATASET  shift 4
+	.  error
+
+
+state 3
+	eolo:  EOL.    (51)
+
+	.  reduce 51 (src line 351)
+
+
+state 4
+	dataset:  eolo DATASET.BLK srvclso srvstko optblkr mainblk 
+
+	BLK  shift 5
+	.  error
+
+
+state 5
+	dataset:  eolo DATASET BLK.srvclso srvstko optblkr mainblk 
+	srvclso: .    (44)
+
+	FOR_SERVICE  shift 8
+	.  reduce 44 (src line 338)
+
+	srvcls  goto 7
+	srvclso  goto 6
+
+state 6
+	dataset:  eolo DATASET BLK srvclso.srvstko optblkr mainblk 
+	srvstko: .    (41)
+
+	FOR_STACK  shift 11
+	.  reduce 41 (src line 331)
+
+	srvstk  goto 10
+	srvstko  goto 9
+
+state 7
+	srvclso:  srvcls.EOL 
+
+	EOL  shift 12
+	.  error
+
+
+state 8
+	srvcls:  FOR_SERVICE.idlst 
+
+	IDENTIFIER  shift 15
+	.  error
+
+	idlst  goto 13
+	id  goto 14
+
+state 9
+	dataset:  eolo DATASET BLK srvclso srvstko.optblkr mainblk 
+	optblkr: .    (25)
+
+	SET  shift 19
+	.  reduce 25 (src line 248)
+
+	optsblk  goto 17
+	optblkr  goto 16
+	setcls  goto 18
+
+state 10
+	srvstko:  srvstk.EOL 
+
+	EOL  shift 20
+	.  error
+
+
+state 11
+	srvstk:  FOR_STACK.idlst 
+
+	IDENTIFIER  shift 15
+	.  error
+
+	idlst  goto 21
+	id  goto 14
+
+state 12
+	srvclso:  srvcls EOL.    (45)
+
+	.  reduce 45 (src line 340)
+
+
+state 13
+	idlst:  idlst.COMMA id 
+	srvcls:  FOR_SERVICE idlst.    (43)
+
+	COMMA  shift 22
+	.  reduce 43 (src line 336)
+
+
+state 14
+	idlst:  id.    (14)
+
+	.  reduce 14 (src line 222)
+
+
+state 15
+	id:  IDENTIFIER.    (8)
+
+	.  reduce 8 (src line 199)
+
+
+state 16
+	dataset:  eolo DATASET BLK srvclso srvstko optblkr.mainblk 
+
+	DEFINE_AUTH  shift 29
+	GET  shift 30
+	POST  shift 31
+	.  error
+
+	srcverb  goto 28
+	defverb  goto 27
+	mainblk  goto 23
+	defsec  goto 25
+	mainsec  goto 24
+	srcsec  goto 26
+
+state 17
+	optsblk:  optsblk.EOL setcls 
+	optblkr:  optsblk.EOL 
+
+	EOL  shift 32
+	.  error
+
+
+state 18
+	optsblk:  setcls.    (10)
+
+	.  reduce 10 (src line 206)
+
+
+state 19
+	setcls:  SET.STR_LITERAL TO STR_LITERAL 
+
+	STR_LITERAL  shift 33
+	.  error
+
+
+state 20
+	srvstko:  srvstk EOL.    (42)
+
+	.  reduce 42 (src line 333)
+
+
+state 21
+	idlst:  idlst.COMMA id 
+	srvstk:  FOR_STACK idlst.    (40)
+
+	COMMA  shift 22
+	.  reduce 40 (src line 328)
+
+
+state 22
+	idlst:  idlst COMMA.id 
+
+	IDENTIFIER  shift 15
+	.  error
+
+	id  goto 34
+
+state 23
+	mainblk:  mainblk.EOL mainsec 
+	dataset:  eolo DATASET BLK srvclso srvstko optblkr mainblk.    (52)
+
+	EOL  shift 35
+	.  reduce 52 (src line 352)
+
+
+state 24
+	mainblk:  mainsec.    (48)
+
+	.  reduce 48 (src line 346)
+
+
+state 25
+	mainsec:  defsec.    (46)
+
+	.  reduce 46 (src line 342)
+
+
+state 26
+	mainsec:  srcsec.    (47)
+
+	.  reduce 47 (src line 344)
+
+
+state 27
+	defsec:  defverb.IDENTIFIER AS STR_LITERAL optblko 
+
+	IDENTIFIER  shift 36
+	.  error
+
+
+state 28
+	srcsec:  srcverb.IDENTIFIER FROM RESOURCE_PATH srcsecsufixo 
+
+	IDENTIFIER  shift 37
+	.  error
+
+
+state 29
+	defverb:  DEFINE_AUTH.    (1)
+
+	.  reduce 1 (src line 182)
+
+
+state 30
+	srcverb:  GET.    (2)
+
+	.  reduce 2 (src line 185)
+
+
+state 31
+	srcverb:  POST.    (3)
+
+	.  reduce 3 (src line 187)
+
+
+state 32
+	optsblk:  optsblk EOL.setcls 
+	optblkr:  optsblk EOL.    (26)
+
+	SET  shift 19
+	.  reduce 26 (src line 250)
+
+	setcls  goto 38
+
+state 33
+	setcls:  SET STR_LITERAL.TO STR_LITERAL 
+
+	TO  shift 39
+	.  error
+
+
+state 34
+	idlst:  idlst COMMA id.    (15)
+
+	.  reduce 15 (src line 224)
+
+
+state 35
+	mainblk:  mainblk EOL.mainsec 
+
+	DEFINE_AUTH  shift 29
+	GET  shift 30
+	POST  shift 31
+	.  error
+
+	srcverb  goto 28
+	defverb  goto 27
+	defsec  goto 25
+	mainsec  goto 40
+	srcsec  goto 26
+
+state 36
+	defsec:  defverb IDENTIFIER.AS STR_LITERAL optblko 
+
+	AS  shift 41
+	.  error
+
+
+state 37
+	srcsec:  srcverb IDENTIFIER.FROM RESOURCE_PATH srcsecsufixo 
+
+	FROM  shift 42
+	.  error
+
+
+state 38
+	optsblk:  optsblk EOL setcls.    (11)
+
+	.  reduce 11 (src line 212)
+
+
+state 39
+	setcls:  SET STR_LITERAL TO.STR_LITERAL 
+
+	STR_LITERAL  shift 43
+	.  error
+
+
+state 40
+	mainblk:  mainblk EOL mainsec.    (49)
+
+	.  reduce 49 (src line 348)
+
+
+state 41
+	defsec:  defverb IDENTIFIER AS.STR_LITERAL optblko 
+
+	STR_LITERAL  shift 44
+	.  error
+
+
+state 42
+	srcsec:  srcverb IDENTIFIER FROM.RESOURCE_PATH srcsecsufixo 
+
+	RESOURCE_PATH  shift 45
+	.  error
+
+
+state 43
+	setcls:  SET STR_LITERAL TO STR_LITERAL.    (9)
+
+	.  reduce 9 (src line 204)
+
+
+state 44
+	defsec:  defverb IDENTIFIER AS STR_LITERAL.optblko 
+	optblko: .    (38)
+
+	BLK  shift 47
+	.  reduce 38 (src line 316)
+
+	optblko  goto 46
+
+state 45
+	srcsec:  srcverb IDENTIFIER FROM RESOURCE_PATH.srcsecsufixo 
+	srcsecsufixo: .    (33)
+
+	BLK  shift 50
+	.  reduce 33 (src line 281)
+
+	srcsecsufix  goto 49
+	srcsecsufixo  goto 48
+
+state 46
+	defsec:  defverb IDENTIFIER AS STR_LITERAL optblko.    (37)
+
+	.  reduce 37 (src line 306)
+
+
+state 47
+	optblko:  BLK.optsblk EOB 
+
+	SET  shift 19
+	.  error
+
+	optsblk  goto 51
+	setcls  goto 18
+
+state 48
+	srcsec:  srcverb IDENTIFIER FROM RESOURCE_PATH srcsecsufixo.    (36)
+
+	.  reduce 36 (src line 296)
+
+
+state 49
+	srcsecsufixo:  srcsecsufix.    (34)
+
+	.  reduce 34 (src line 283)
+
+
+state 50
+	srcsecsufix:  BLK.optblkr ssec EOB 
+	optblkr: .    (25)
+
+	SET  shift 19
+	.  reduce 25 (src line 248)
+
+	optsblk  goto 17
+	optblkr  goto 52
+	setcls  goto 18
+
+state 51
+	optsblk:  optsblk.EOL setcls 
+	optblko:  BLK optsblk.EOB 
+
+	EOB  shift 54
+	EOL  shift 53
+	.  error
+
+
+state 52
+	srcsecsufix:  BLK optblkr.ssec EOB 
+
+	EXTRACT_USING  shift 57
+	.  error
+
+	extblk  goto 56
+	ssec  goto 55
+
+state 53
+	optsblk:  optsblk EOL.setcls 
+
+	SET  shift 19
+	.  error
+
+	setcls  goto 38
+
+state 54
+	optblko:  BLK optsblk EOB.    (39)
+
+	.  reduce 39 (src line 318)
+
+
+state 55
+	ssec:  ssec.EOL extblk 
+	srcsecsufix:  BLK optblkr ssec.EOB 
+
+	EOB  shift 59
+	EOL  shift 58
+	.  error
+
+
+state 56
+	ssec:  extblk.    (31)
+
+	.  reduce 31 (src line 276)
+
+
+state 57
+	extblk:  EXTRACT_USING.STR_LITERAL BLK optblkr metblk EOB 
+
+	STR_LITERAL  shift 60
+	.  error
+
+
+state 58
+	ssec:  ssec EOL.extblk 
+
+	EXTRACT_USING  shift 57
+	.  error
+
+	extblk  goto 61
+
+state 59
+	srcsecsufix:  BLK optblkr ssec EOB.    (35)
+
+	.  reduce 35 (src line 288)
+
+
+state 60
+	extblk:  EXTRACT_USING STR_LITERAL.BLK optblkr metblk EOB 
+
+	BLK  shift 62
+	.  error
+
+
+state 61
+	ssec:  ssec EOL extblk.    (32)
+
+	.  reduce 32 (src line 278)
+
+
+state 62
+	extblk:  EXTRACT_USING STR_LITERAL BLK.optblkr metblk EOB 
+	optblkr: .    (25)
+
+	SET  shift 19
+	.  reduce 25 (src line 248)
+
+	optsblk  goto 17
+	optblkr  goto 63
+	setcls  goto 18
+
+state 63
+	extblk:  EXTRACT_USING STR_LITERAL BLK optblkr.metblk EOB 
+
+	METRIC  shift 66
+	.  error
+
+	metsec  goto 65
+	metblk  goto 64
+
+state 64
+	metblk:  metblk.EOL metsec 
+	extblk:  EXTRACT_USING STR_LITERAL BLK optblkr metblk.EOB 
+
+	EOB  shift 68
+	EOL  shift 67
+	.  error
+
+
+state 65
+	metblk:  metsec.    (28)
+
+	.  reduce 28 (src line 264)
+
+
+state 66
+	metsec:  METRIC.BLK mname EOL mtype mhelpo mlablso optblkl EOB 
+
+	BLK  shift 69
+	.  error
+
+
+state 67
+	metblk:  metblk EOL.metsec 
+
+	METRIC  shift 66
+	.  error
+
+	metsec  goto 70
+
+state 68
+	extblk:  EXTRACT_USING STR_LITERAL BLK optblkr metblk EOB.    (30)
+
+	.  reduce 30 (src line 268)
+
+
+state 69
+	metsec:  METRIC BLK.mname EOL mtype mhelpo mlablso optblkl EOB 
+
+	NAME  shift 72
+	.  error
+
+	mname  goto 71
+
+state 70
+	metblk:  metblk EOL metsec.    (29)
+
+	.  reduce 29 (src line 266)
+
+
+state 71
+	metsec:  METRIC BLK mname.EOL mtype mhelpo mlablso optblkl EOB 
+
+	EOL  shift 73
+	.  error
+
+
+state 72
+	mname:  NAME.STR_LITERAL 
+
+	STR_LITERAL  shift 74
+	.  error
+
+
+state 73
+	metsec:  METRIC BLK mname EOL.mtype mhelpo mlablso optblkl EOB 
+
+	TYPE  shift 76
+	.  error
+
+	mtype  goto 75
+
+state 74
+	mname:  NAME STR_LITERAL.    (17)
+
+	.  reduce 17 (src line 228)
+
+
+75: shift/reduce conflict (shift 78(0), red'n 20(0)) on EOL
+state 75
+	metsec:  METRIC BLK mname EOL mtype.mhelpo mlablso optblkl EOB 
+	mhelpo: .    (20)
+
+	EOL  shift 78
+	.  reduce 20 (src line 234)
+
+	mhelpo  goto 77
+
+state 76
+	mtype:  TYPE.mtvalue 
+
+	COUNTER  shift 81
+	GAUGE  shift 80
+	HISTOGRAM  shift 82
+	SUMMARY  shift 83
+	.  error
+
+	mtvalue  goto 79
+
+state 77
+	metsec:  METRIC BLK mname EOL mtype mhelpo.mlablso optblkl EOB 
+	mlablso: .    (22)
+
+	.  reduce 22 (src line 240)
+
+	mlablso  goto 84
+
+state 78
+	mhelpo:  EOL.mhelp 
+
+	HELP  shift 86
+	.  error
+
+	mhelp  goto 85
+
+state 79
+	mtype:  TYPE mtvalue.    (18)
+
+	.  reduce 18 (src line 230)
+
+
+state 80
+	mtvalue:  GAUGE.    (4)
+
+	.  reduce 4 (src line 190)
+
+
+state 81
+	mtvalue:  COUNTER.    (5)
+
+	.  reduce 5 (src line 192)
+
+
+state 82
+	mtvalue:  HISTOGRAM.    (6)
+
+	.  reduce 6 (src line 194)
+
+
+state 83
+	mtvalue:  SUMMARY.    (7)
+
+	.  reduce 7 (src line 196)
+
+
+state 84
+	metsec:  METRIC BLK mname EOL mtype mhelpo mlablso.optblkl EOB 
+	optblkl: .    (23)
+
+	EOL  shift 88
+	.  reduce 23 (src line 244)
+
+	optblkl  goto 87
+
+state 85
+	mhelpo:  EOL mhelp.    (21)
+
+	.  reduce 21 (src line 238)
+
+
+state 86
+	mhelp:  HELP.STR_LITERAL 
+
+	STR_LITERAL  shift 89
+	.  error
+
+
+state 87
+	metsec:  METRIC BLK mname EOL mtype mhelpo mlablso optblkl.EOB 
+
+	EOB  shift 90
+	.  error
+
+
+state 88
+	optblkl:  EOL.optsblk 
+
+	SET  shift 19
+	.  error
+
+	optsblk  goto 91
+	setcls  goto 18
+
+state 89
+	mhelp:  HELP STR_LITERAL.    (19)
+
+	.  reduce 19 (src line 232)
+
+
+state 90
+	metsec:  METRIC BLK mname EOL mtype mhelpo mlablso optblkl EOB.    (27)
+
+	.  reduce 27 (src line 252)
+
+
+state 91
+	optsblk:  optsblk.EOL setcls 
+	optblkl:  EOL optsblk.    (24)
+
+	EOL  shift 53
+	.  reduce 24 (src line 246)
+
+Rule not reduced: strlst:  STR_LITERAL 
+Rule not reduced: strlst:  strlst COMMA STR_LITERAL 
+Rule not reduced: mlabels:  LABELS strlst 
+
+33 terminals, 34 nonterminals
+53 grammar rules, 92/8000 states
+1 shift/reduce, 0 reduce/reduce conflicts reported
+83 working sets used
+memory: parser 54/120000
+8 extra closures
+65 shift entries, 1 exceptions
+44 goto entries
+9 entries saved by goto default
+Optimizer space used: output 93/120000
+93 table entries, 0 zero
+maximum spread: 33, maximum offset: 88
