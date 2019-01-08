@@ -12,10 +12,7 @@ import (
 )
 
 // TokenCreator create token clients
-type TokenCreator struct {
-	baseFactory
-	URIToGenToken string
-}
+type TokenCreator baseFactory
 
 // CreateClient create a token client
 func (tc TokenCreator) CreateClient() (cl Client, err error) {
@@ -23,12 +20,12 @@ func (tc TokenCreator) CreateClient() (cl Client, err error) {
 	// client = TokenClient{baseClient: baseClient{service: service}}
 	// FIXME(denisacostaq@gmail.com): make the "GET" configurable.
 	var req *http.Request
-	if req, err = http.NewRequest("GET", tc.URIToGenToken, nil); err != nil {
+	if req, err = http.NewRequest("GET", tc.dataSource, nil); err != nil {
 		errCause := fmt.Sprintln("can not create the request: ", err.Error())
 		return cl, util.ErrorFromThisScope(errCause, generalScopeErr)
 	}
 	cl = TokenClient{
-		baseClient: baseClient{
+		baseClient: baseClient{ // nolint megacheck
 			jobName:                        tc.jobName,
 			instanceName:                   tc.instanceName,
 			dataSource:                     tc.dataSource,

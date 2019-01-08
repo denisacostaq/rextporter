@@ -1,0 +1,3 @@
+resourcePathsForServicesConfig = [
+	{ skycoin = "tomlconfig/skycoinResourcePaths.toml" },
+]

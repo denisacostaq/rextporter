@@ -3,11 +3,11 @@ package memconfig
 import (
 	"testing"
 
-	"github.com/simelo/rextporter/src/core"
+	"github.com/simelo/rextporter/src/config"
 	"github.com/stretchr/testify/suite"
 )
 
-func newNodeSolver(suite *nodeSolverSuit) core.RextNodeSolver {
+func newNodeSolver(suite *nodeSolverSuit) config.RextNodeSolver {
 	return NewNodeSolver(
 		suite.nodeSolverType,
 		suite.nodePath,
@@ -17,13 +17,13 @@ func newNodeSolver(suite *nodeSolverSuit) core.RextNodeSolver {
 
 type nodeSolverSuit struct {
 	suite.Suite
-	nodeSolver               core.RextNodeSolver
+	nodeSolver               config.RextNodeSolver
 	nodeSolverType, nodePath string
-	options                  core.RextKeyValueStore
+	options                  config.RextKeyValueStore
 }
 
 func (suite *nodeSolverSuit) SetupTest() {
-	suite.nodeSolverType = core.RextNodeSolverTypeJSONPath
+	suite.nodeSolverType = config.RextNodeSolverTypeJSONPath
 	suite.nodePath = "/tmp/a"
 	suite.options = NewOptionsMap()
 	_, err := suite.options.SetString("k1", "v1")

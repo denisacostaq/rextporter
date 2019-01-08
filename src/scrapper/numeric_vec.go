@@ -1,22 +1,19 @@
 package scrapper
 
 import (
-	"fmt"
-
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/simelo/rextporter/src/client"
-	"github.com/simelo/rextporter/src/core"
-	"github.com/simelo/rextporter/src/util"
+	"github.com/simelo/rextporter/src/config"
+	log "github.com/sirupsen/logrus"
 )
 
 // NumericVec implements the Client interface(is able to get numeric metrics through `GetMetric` like Gauge and Counter)
 type NumericVec struct {
 	baseAPIScrapper
-	labels   []core.RextLabelDef
-	itemPath string
+	labels []config.RextLabelDef
 }
 
-func newNumericVec(cf client.Factory, p BodyParser, jobName, instanceName, dataSource string, nSolver core.RextNodeSolver, mtrConf core.RextMetricDef, itemPath string) Scrapper {
+func newNumericVec(cf client.Factory, p BodyParser, jobName, instanceName, dataSource string, nSolver config.RextNodeSolver, mtrConf config.RextMetricDef) Scrapper {
 	return NumericVec{
 		baseAPIScrapper: baseAPIScrapper{
 			baseScrapper: baseScrapper{
@@ -28,8 +25,7 @@ func newNumericVec(cf client.Factory, p BodyParser, jobName, instanceName, dataS
 			parser:        p,
 			jsonPath:      nSolver.GetNodePath(),
 		},
-		labels:   mtrConf.GetLabels(),
-		itemPath: itemPath,
+		labels: mtrConf.GetLabels(),
 	}
 }
 
@@ -44,49 +40,50 @@ type NumericVecVals []NumericVecItemVal
 
 // GetMetric returns a numeric(Gauge or Counter) vector metric by using remote data.
 func (nv NumericVec) GetMetric(metricsCollector chan<- prometheus.Metric) (val interface{}, err error) {
-	const generalScopeErr = "error scrapping numeric vec(gauge|counter) metric vec"
 	var iBody interface{}
 	if iBody, err = getData(nv.clientFactory, nv.parser, metricsCollector); err != nil {
-		errCause := "numeric vec client can not decode the body"
-		return val, util.ErrorFromThisScope(errCause, generalScopeErr)
+		log.WithError(err).Errorln("can not get data for numeric vec")
+		return val, config.ErrKeyNotSuccessResponse
 	}
 	var iValColl interface{}
 	if iValColl, err = nv.parser.pathLookup(nv.jsonPath, iBody); err != nil {
-		errCause := fmt.Sprintln("can not get collection node: ", err.Error())
-		return nil, util.ErrorFromThisScope(errCause, generalScopeErr)
+		log.WithFields(log.Fields{"err": err, "body": iBody, "path": nv.jsonPath}).Errorln("can not get node from body")
+		return val, config.ErrKeyDecodingFile
 	}
 	metricCollection, okMetricCollection := iValColl.([]interface{})
 	if !okMetricCollection {
-		errCause := fmt.Sprintln("can not assert the metric type as slice")
-		return nil, util.ErrorFromThisScope(errCause, generalScopeErr)
+		log.WithField("val", iValColl).Errorln("can not assert value as []interface{}")
+		return val, config.ErrKeyInvalidType
 	}
 	metricsVal := make(NumericVecVals, len(metricCollection))
-	for idxMetric, metricItem := range metricCollection {
-		var iMetricVal interface{}
-		if iMetricVal, err = nv.parser.pathLookup(nv.itemPath, metricItem); err != nil {
-			errCause := fmt.Sprintln("can not locate the metric val: ", err.Error())
-			return nil, util.ErrorFromThisScope(errCause, generalScopeErr)
-		}
+	for idxIMetricVal, iMetricVal := range metricCollection {
 		metricVal, okMetricVal := iMetricVal.(float64)
 		if !okMetricVal {
-			errCause := fmt.Sprintf("can not assert metric val %+v as float64", iMetricVal)
-			return nil, util.ErrorFromThisScope(errCause, generalScopeErr)
+			log.WithField("val", iMetricVal).Errorln("can not assert value as float64")
+			return val, config.ErrKeyInvalidType
 		}
-		metricsVal[idxMetric].Val = metricVal
-		metricsVal[idxMetric].Labels = make([]string, len(nv.labels))
+		metricsVal[idxIMetricVal].Val = metricVal
+		metricsVal[idxIMetricVal].Labels = make([]string, len(nv.labels))
 		for idxLabel, label := range nv.labels {
-			var iLabelVal interface{}
+			var iLabelValColl interface{}
 			ns := label.GetNodeSolver()
-			if iLabelVal, err = nv.parser.pathLookup(ns.GetNodePath(), metricItem); err != nil {
-				errCause := fmt.Sprintln("can not locate the path for label: ", err.Error())
-				return nil, util.ErrorFromThisScope(errCause, generalScopeErr)
+			// FIXME(denisacostaq@gmail.com): This should be optimized, calling pathLookup over iBody multiple times,
+			// aditionally one for each metric, should be only one for each label
+			if iLabelValColl, err = nv.parser.pathLookup(ns.GetNodePath(), iBody); err != nil {
+				log.WithFields(log.Fields{"err": err, "body": iBody, "path": ns.GetNodePath()}).Errorln("can not get node from body")
+				return val, config.ErrKeyDecodingFile
 			}
-			labelVal, okLabelVal := iLabelVal.(string)
+			iLabelVals, okLabelVal := iLabelValColl.([]interface{})
 			if !okLabelVal {
-				errCause := fmt.Sprintf("can not assert metric label %s %+v as string", label.GetName(), iLabelVal)
-				return nil, util.ErrorFromThisScope(errCause, generalScopeErr)
+				log.WithField("val", iLabelValColl).Errorln("can not assert value as []interface{}")
+				return val, config.ErrKeyInvalidType
 			}
-			metricsVal[idxMetric].Labels[idxLabel] = labelVal
+			labelVal, okLabelVal := iLabelVals[idxIMetricVal].(string)
+			if !okLabelVal {
+				log.WithField("val", iLabelVals[idxIMetricVal]).Errorln("can not assert value as string")
+				return val, config.ErrKeyInvalidType
+			}
+			metricsVal[idxIMetricVal].Labels[idxLabel] = labelVal
 		}
 	}
 	return metricsVal, nil

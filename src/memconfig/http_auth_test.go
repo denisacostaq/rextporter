@@ -3,28 +3,28 @@ package memconfig
 import (
 	"testing"
 
-	"github.com/simelo/rextporter/src/core"
+	"github.com/simelo/rextporter/src/config"
 	"github.com/stretchr/testify/suite"
 )
 
-func newAuth(suite *authConfSuit) core.RextAuthDef {
+func newAuth(suite *authConfSuit) config.RextAuthDef {
 	return NewHTTPAuth(suite.authType, suite.authURL, suite.options)
 }
 
 type authConfSuit struct {
 	suite.Suite
-	authConf          core.RextAuthDef
+	authConf          config.RextAuthDef
 	authType, authURL string
 	options           OptionsMap
 }
 
 func (suite *authConfSuit) SetupTest() {
 	suite.options = NewOptionsMap()
-	_, err := suite.options.SetString(core.OptKeyRextAuthDefTokenHeaderKey, "v1")
+	_, err := suite.options.SetString(config.OptKeyRextAuthDefTokenHeaderKey, "v1")
 	suite.Nil(err)
-	_, err = suite.options.SetString(core.OptKeyRextAuthDefTokenGenEndpoint, "v2")
+	_, err = suite.options.SetString(config.OptKeyRextAuthDefTokenGenEndpoint, "v2")
 	suite.Nil(err)
-	_, err = suite.options.SetString(core.OptKeyRextAuthDefTokenKeyFromEndpoint, "v3")
+	_, err = suite.options.SetString(config.OptKeyRextAuthDefTokenKeyFromEndpoint, "v3")
 	suite.Nil(err)
 	suite.authType = "CSRF"
 	suite.authURL = "http://localhost:9000/hosted_in/auth"
@@ -43,6 +43,7 @@ func (suite *authConfSuit) TestNewHTTPAuth() {
 	opts, err := suite.options.Clone()
 	suite.Nil(err)
 	_, err = suite.options.SetString("k1", "v2")
+	suite.Nil(err)
 
 	// NOTE(denisacostaq@gmail.com): Assert
 	suite.Equal(suite.authType, authConf.GetAuthType())
@@ -107,7 +108,7 @@ func (suite *authConfSuit) TestValidationTokenHeaderKeyShouldNotBeEmptyInCSRF() 
 
 	// NOTE(denisacostaq@gmail.com): When
 	opts := authDef.GetOptions()
-	pe, err := opts.SetString(core.OptKeyRextAuthDefTokenHeaderKey, "")
+	pe, err := opts.SetString(config.OptKeyRextAuthDefTokenHeaderKey, "")
 	suite.True(pe)
 	suite.Nil(err)
 	hasError := authDef.Validate()
@@ -123,7 +124,7 @@ func (suite *authConfSuit) TestValidationTokenGenEndpointShouldNotBeEmptyInCSRF(
 
 	// NOTE(denisacostaq@gmail.com): When
 	opts := authDef.GetOptions()
-	pe, err := opts.SetString(core.OptKeyRextAuthDefTokenGenEndpoint, "")
+	pe, err := opts.SetString(config.OptKeyRextAuthDefTokenGenEndpoint, "")
 	suite.True(pe)
 	suite.Nil(err)
 	hasError := authDef.Validate()
@@ -139,7 +140,7 @@ func (suite *authConfSuit) TestValidationTokenKeyFromEndpointShouldNotBeEmptyInC
 
 	// NOTE(denisacostaq@gmail.com): When
 	opts := authDef.GetOptions()
-	pe, err := opts.SetString(core.OptKeyRextAuthDefTokenKeyFromEndpoint, "")
+	pe, err := opts.SetString(config.OptKeyRextAuthDefTokenKeyFromEndpoint, "")
 	suite.True(pe)
 	suite.Nil(err)
 	hasError := authDef.Validate()
@@ -156,13 +157,13 @@ func (suite *authConfSuit) TestValidationTokenValsCanBeEmptyInNotCSRF() {
 
 	// NOTE(denisacostaq@gmail.com): When
 	opts := authDef.GetOptions()
-	pe, err := opts.SetString(core.OptKeyRextAuthDefTokenKeyFromEndpoint, "")
+	pe, err := opts.SetString(config.OptKeyRextAuthDefTokenKeyFromEndpoint, "")
 	suite.True(pe)
 	suite.Nil(err)
-	pe, err = opts.SetString(core.OptKeyRextAuthDefTokenGenEndpoint, "")
+	pe, err = opts.SetString(config.OptKeyRextAuthDefTokenGenEndpoint, "")
 	suite.True(pe)
 	suite.Nil(err)
-	pe, err = opts.SetString(core.OptKeyRextAuthDefTokenHeaderKey, "")
+	pe, err = opts.SetString(config.OptKeyRextAuthDefTokenHeaderKey, "")
 	suite.True(pe)
 	suite.Nil(err)
 	hasError := authDef.Validate()

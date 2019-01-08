@@ -1,0 +1,239 @@
+[[metrics]]
+	name = "health_seq"
+	path = "/blockchain/head/seq"
+	nodeSolver = "health"
+
+	[metrics.options]
+		type = "Counter"
+		description = "Seq value from endpoint /api/v1/health, json node blockchain -> head -> seq"
+
+
+[[metrics]]
+	name = "health_fee"
+	path = "/blockchain/head/fee"
+	nodeSolver = "health"
+
+	[metrics.options]
+		type = "Gauge"
+		description = "Fee value from endpoint /api/v1/health, json node blockchain -> head -> fee"
+
+
+[[metrics]]
+	name = "health_unspents"
+	path = "/blockchain/unspents"
+	nodeSolver = "health"
+
+	[metrics.options]
+		type = "Gauge"
+		description = "Unspents value from endpoint /api/v1/health, json node blockchain -> unspents"
+
+
+[[metrics]]
+	name = "health_unconfirmed"
+	path = "/blockchain/unconfirmed"
+	nodeSolver = "health"
+
+	[metrics.options]
+		type = "Gauge"
+		description = "Unconfirmed value from endpoint /api/v1/health, json node blockchain -> unconfirmed"
+
+
+[[metrics]]
+	name = "health_open_connections"
+	path = "/open_connections"
+	nodeSolver = "health"
+
+	[metrics.options]
+		type = "Gauge"
+		description = "Unconfirmed value from endpoint /api/v1/health, json node open_connections"
+
+
+[[metrics]]
+	name = "health_outgoing_connections"
+	path = "/outgoing_connections"
+	nodeSolver = "health"
+
+	[metrics.options]
+		type = "Gauge"
+		description = "Unconfirmed value from endpoint /api/v1/health, json node outgoing_connections"
+
+
+[[metrics]]
+	name = "health_incoming_connections"
+	path = "/incoming_connections"
+	nodeSolver = "health"
+
+	[metrics.options]
+		type = "Gauge"
+		description = "Unconfirmed value from endpoint /api/v1/health, json node incoming_connections"
+
+
+[[metrics]]
+	name = "health_user_verify_burn_factor"
+	path = "/user_verify_transaction/burn_factor"
+	nodeSolver = "health"
+
+	[metrics.options]
+		type = "Gauge"
+		description = "Unconfirmed value from endpoint /api/v1/health, json node user_verify_transaction -> burn_factor"
+
+
+[[metrics]]
+	name = "health_user_verify_max_transaction_size"
+	path = "/user_verify_transaction/max_transaction_size"
+	nodeSolver = "health"
+
+	[metrics.options]
+		type = "Gauge"
+		description = "Unconfirmed value from endpoint /api/v1/health, json node user_verify_transaction -> max_transaction_size"
+
+
+[[metrics]]
+	name = "health_user_verify_max_decimals"
+	path = "/user_verify_transaction/max_decimals"
+	nodeSolver = "health"
+
+	[metrics.options]
+		type = "Gauge"
+		description = "Unconfirmed value from endpoint /api/v1/health, json node user_verify_transaction -> max_decimals"
+
+
+[[metrics]]
+	name = "health_unconfirmed_verify_burn_factor"
+	path = "/unconfirmed_verify_transaction/burn_factor"
+	nodeSolver = "health"
+
+	[metrics.options]
+		type = "Gauge"
+		description = "Unconfirmed value from endpoint /api/v1/health, json node unconfirmed_verify_transaction -> burn_factor"
+
+
+[[metrics]]
+	name = "health_unconfirmed_verify_max_transaction_size"
+	path = "/unconfirmed_verify_transaction/max_transaction_size"
+	nodeSolver = "health"
+
+	[metrics.options]
+		type = "Gauge"
+		description = "Unconfirmed value from endpoint /api/v1/health, json node unconfirmed_verify_transaction -> max_transaction_size"
+
+
+[[metrics]]
+	name = "health_unconfirmed_verify_max_decimals"
+	path = "/unconfirmed_verify_transaction/max_decimals"
+	nodeSolver = "health"
+
+	[metrics.options]
+		type = "Gauge"
+		description = "Unconfirmed value from endpoint /api/v1/health, json node unconfirmed_verify_transaction -> max_decimals"
+
+
+[[metrics]]
+	name = "blockchain_metadata_seq"
+	path = "/head/seq"
+	nodeSolver = "blockchain_metadata"
+
+	[metrics.options]
+		type = "Counter"
+		description = "Value from endpoint /api/v1/blockchain/metadata, json node head -> seq"
+
+
+[[metrics]]
+	name = "blockchain_metadata_fee"
+	path = "/head/fee"
+	nodeSolver = "blockchain_metadata"
+
+	[metrics.options]
+		type = "Gauge"
+		description = "Value from endpoint /api/v1/blockchain/metadata, json node head -> fee"
+
+
+[[metrics]]
+	name = "blockchain_metadata_unspents"
+	path = "/unspents"
+	nodeSolver = "blockchain_metadata"
+
+	[metrics.options]
+		type = "Gauge"
+		description = "Value from endpoint /api/v1/blockchain/metadata, json node unspents"
+
+
+[[metrics]]
+	name = "blockchain_metadata_unconfirmed"
+	path = "/unconfirmed"
+	nodeSolver = "blockchain_metadata"
+
+	[metrics.options]
+		type = "Gauge"
+		description = "Value from endpoint /api/v1/blockchain/metadata, json node unconfirmed"
+
+
+[[metrics]]
+	name = "blockchain_progress_current"
+	path = "/current"
+	nodeSolver = "blockchain_progress"
+
+	[metrics.options]
+		type = "Counter"
+		description = "Value from endpoint /api/v1/blockchain/progress, json node current"
+
+
+[[metrics]]
+	name = "blockchain_progress_highest"
+	path = "/highest"
+	nodeSolver = "blockchain_progress"
+
+	[metrics.options]
+		type = "Gauge"
+		description = "Value from endpoint /api/v1/blockchain/progress, json node highest"
+
+
+[[metrics]]
+	name = "connections_highest"
+	path = "/connections/height"
+	nodeSolver = "connections"
+
+	[metrics.options]
+		type = "Gauge"
+		description = "Value from endpoint /api/v1/network/connections, json node connections -> highest" 
+		[[metrics.options.labels]]
+			name = "Address"
+			path = "/connections/address"
+
+
+[[metrics]]
+	name = "connections_burn_factor_hist"
+	path = "/connections/unconfirmed_verify_transaction/burn_factor"
+
+	[metrics.options]
+		type = "Histogram"
+		description = "Burn factor histogram across connections"
+	
+	[metrics.histogramOptions]
+		buckets = [1, 2, 3]
+
+
+[[metrics]]
+	name = "connections_max_transaction_size"
+	path = "/connections/unconfirmed_verify_transaction/max_transaction_size"
+	nodeSolver = "connections"
+
+	[metrics.options]
+		type = "Gauge"
+		description = "Value from endpoint /api/v1/network/connections, json node connections -> max_transaction_size" 
+		[[metrics.options.labels]]
+			name = "Address"
+			path = "/connections/address"
+
+
+[[metrics]]
+	name = "connections_max_decimals"
+	path = "/connections/unconfirmed_verify_transaction/max_decimals"
+	nodeSolver = "connections"
+
+	[metrics.options]
+		type = "Gauge"
+		description = "Value from endpoint /api/v1/network/connections, json node connections -> max_decimals" 
+		[[metrics.options.labels]]
+			name = "Address"
+			path = "/connections/address"

@@ -1,21 +1,21 @@
 package memconfig
 
 import (
-	"github.com/simelo/rextporter/src/core"
+	"github.com/simelo/rextporter/src/config"
 	log "github.com/sirupsen/logrus"
 )
 
-// NodeSolver implements the interface core.RextNodeSolver
+// NodeSolver implements the interface config.RextNodeSolver
 type NodeSolver struct {
 	// FIXME(denisacostaq@gmail.com): lowercase
 	MType    string
 	nodePath string
-	options  core.RextKeyValueStore
+	options  config.RextKeyValueStore
 }
 
 // Clone make a deep copy of NodeSolver or return an error if any
-func (ns NodeSolver) Clone() (cNs core.RextNodeSolver, err error) {
-	var cOpts core.RextKeyValueStore
+func (ns NodeSolver) Clone() (cNs config.RextNodeSolver, err error) {
+	var cOpts config.RextKeyValueStore
 	if cOpts, err = ns.GetOptions().Clone(); err != nil {
 		log.WithError(err).Errorln("can not clone options in node solver")
 		return cNs, err
@@ -40,7 +40,7 @@ func (ns NodeSolver) GetNodePath() string {
 }
 
 // GetOptions return key/value pairs for extra options
-func (ns *NodeSolver) GetOptions() core.RextKeyValueStore {
+func (ns *NodeSolver) GetOptions() config.RextKeyValueStore {
 	if ns.options == nil {
 		ns.options = NewOptionsMap()
 	}
@@ -49,11 +49,11 @@ func (ns *NodeSolver) GetOptions() core.RextKeyValueStore {
 
 // Validate the node solver, return true if any error is found
 func (ns NodeSolver) Validate() bool {
-	return core.ValidateNodeSolver(&ns)
+	return config.ValidateNodeSolver(&ns)
 }
 
 // NewNodeSolver create a new node solver
-func NewNodeSolver(mType, nodePath string, options core.RextKeyValueStore) core.RextNodeSolver {
+func NewNodeSolver(mType, nodePath string, options config.RextKeyValueStore) config.RextNodeSolver {
 	return &NodeSolver{
 		MType:    mType,
 		nodePath: nodePath,

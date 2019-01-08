@@ -41,7 +41,6 @@ type Metric struct {
 // MetricOptions keep information you about the metric, mostly the type(Counter, Gauge, Summary, and Histogram)
 type MetricOptions struct {
 	Type        string `json:"type"`
-	ItemPath    string `json:"item_path"`
 	Description string `json:"description"`
 	Labels      []Label
 }

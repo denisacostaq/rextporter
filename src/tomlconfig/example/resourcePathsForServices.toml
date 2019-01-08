@@ -1,4 +1,0 @@
-resourcePathsForServicesConfig = [
-	{ skycoin = "/home/adacosta/.config/simelo/rextporter/resourcePathsForServices.toml" },
-	{ wallet = "/home/adacosta/.config/simelo/rextporter/walletResourcePaths.toml" },
-]

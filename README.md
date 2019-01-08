@@ -19,85 +19,114 @@ $ go install ./...
 
 You can run the program (`rextporter`, make sure you have it accessible trough your `PATH` env variable) by calling it in the console and you have the following parameters options.
 
- - `-config` Metrics main config file path. (default to your home config folder + simelo -> rextporter -> main.toml).
+ - `-config` Metrics main config file path. This flag is required.
  - `-handler` Handler to expose metric. (default "/metrics").
  - `-port` Listen port. (default 8080)
 
 ### Config file
 
-Trough program parameter you can refer to main config path only, if you wan to use a custom path for services config file, metrics for services or metrics you should edit the main config it self. If you point to a not existent main config file it will use a default path and crete it in such default path. If you point to a non existent (or not specify one) services, metrics for services, or metrics path a default one will be create in such path.
+Trough program parameter you should refer to main config path.
 
-You have at least 4 config files:
+You should have at least 6 config files:
 
-- Main config (general definitions, like for example, load the service config from file and use "this" path)
+- Main config (general definitions, like for example, load the service config from file and use "this" path).
 
 - Services config (services definitions), the path should be maped from the main config.
 
 - Metrics for service (metrics definitions) config, the path should be maped from the main config.
 
-- `ServiceName+Metrics.toml` define the metrics of a giving service (`ServiceName`), the path should be mapped from metrics for service. You can have multiple ServiceNameMetric(`skycoinMetric.toml` for instance), depending on the number of service and hoh they are mapped with metrics.
+- Resources paths for service (resources paths definitions) config, the path should be maped from the main config.
+
+- `ServiceName+Metrics.toml` define the metrics of a giving service (`ServiceName`), the path should be mapped from metrics for service. You can have multiple ServiceNameMetric(`skycoinMetric.toml` for instance), depending on the number of service and how they are mapped with metrics.
+
+- `ServiceName+ResourcePath.toml` define the available resource in a giving service (`ServiceName`), the path should be mapped from resources paths for service. You can have multiple ServiceNameResourcesPaths (`skycoinResourcesPaths.toml` for instance), depending on the number of service and how they are mapped with metrics.
 
 Example main configuration file:
 ```toml
-serviceConfigTransport = "file"
-servicesConfigPath = "/home/adacosta/.config/simelo/rextporter/service.toml"
-metricsForServicesPath = "/home/adacosta/.config/simelo/rextporter/metricsForServices.toml"
+servicesConfigPath = "tomlconfig/services.toml"
+metricsForServicesConfigPath = "tomlconfig/metricsForServices.toml"
+resourcePathsForServicesConfPath = "tomlconfig/resourcePathsForServices.toml"
 ```
 
 Example services configuration file:
 ```toml
 # Services configuration.
 [[services]]
-  name = "skycoin"
-  modes = ["rest_api"]
-  scheme = "http"
-  port = 8000
-  basePath = ""
-  authType = "CSRF"
-  tokenHeaderKey = "X-CSRF-Token"
-  genTokenEndpoint = "/api/v1/csrf"
-  tokenKeyFromEndpoint = "csrf_token"
+	name = "skycoin"
+	protocol = "http"
+	port = 6420
+	authType = "CSRF"
+	tokenHeaderKey = "X-CSRF-Token"
+	genTokenEndpoint = "/api/v1/csrf"
+	tokenKeyFromEndpoint = "csrf_token"
 
-  [services.location]
-    location = "localhost"
+	[services.location]
+		location = "localhost"
+
 ```
 
 Example metrics for service configuration file:
 ```toml
-serviceNameToMetricsConfPath = [
-	{ skycoin = "/home/adacosta/.config/simelo/rextporter/skycoinMetrics.toml" },
-	{ wallet = "/home/adacosta/.config/simelo/rextporter/walletMetrics.toml" },
+metricPathsForServicesConfig = [
+	{ skycoin = "tomlconfig/skycoinMetrics.toml" },
 ]
 ```
 
-Example metrics(for skycoin in this case) file configuration file.
+Example resources paths for services configuration file:
 ```toml
-# All metrics to be measured.
-[[metrics]]
-  name = "seq"
-  url = "/api/v1/health"
-  httpMethod = "GET"
-  path = "/blockchain/head/seq"
-
-  [metrics.options]
-    type = "Counter"
-    description = "Put a description for this metrics"
+resourcePathsForServicesConfig = [
+	{ skycoin = "tomlconfig/skycoinResourcesPaths.toml" },
+]
 ```
+
+Example metrics(for skycoin in this case) configuration file.
+```toml
+[[metrics]]
+	name = "health_seq"
+	path = "/blockchain/head/seq"
+
+	[metrics.options]
+		type = "Counter"
+		description = "Seq value from endpoint /api/v1/health, json node blockchain -> head -> seq"
+```
+
+Example resources paths(for skycoin in this case) configuration file.
+```toml
+[[ResourcePaths]]
+	Name = "health"
+	Path = "/api/v1/health"
+	PathType = "rest_api"
+	nodeSolverType = "jsonPath"
+	MetricNames = ["health_seq"]
+```
+The `MetricNames` allow you to enable only a subset of all the available metrics for this resource path.
 
 Example gauge vector metric configuration.
 ```toml
 [[metrics]]
-  name = "burn_factor_by_service"
-  url = "/api/v1/network/connections"
-  httpMethod = "GET"
-  path = "/connections"
+	name = "connections_highest_by_address"
+	path = "/connections/height"
 
-  [metrics.options]
-    type = "Gauge"
-    itemPath = "/unconfirmed_verify_transaction/burn_factor"
-    description = "I am running since"
-
-  [[metrics.options.labels]]
-    name = "ip_port"
-    path = "/address"
+	[metrics.options]
+		type = "Gauge"
+		description = "Value from endpoint /api/v1/network/connections, json node connections -> highest" 
+		[[metrics.options.labels]]
+			name = "Address"
+			path = "/connections/address"
 ```
+
+Example histogram metric configuration:
+```toml
+[[metrics]]
+	name = "connections_burn_factor_hist"
+	path = "/connections/unconfirmed_verify_transaction/burn_factor"
+
+	[metrics.options]
+		type = "Histogram"
+		description = "Burn factor histogram across connections"
+	
+	[metrics.histogramOptions]
+		buckets = [1, 2, 3]
+```
+
+A full example configuration for skycoin can be found in the [integration tests folder](https://github.com/simelo/rextporter/tree/master/test/integration/skycoin/tomlconfig).

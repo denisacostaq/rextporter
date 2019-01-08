@@ -1,0 +1,3 @@
+metricPathsForServicesConfig = [
+	{ skycoin = "tomlconfig/skycoinMetrics.toml" },
+]

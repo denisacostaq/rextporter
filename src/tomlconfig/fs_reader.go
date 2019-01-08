@@ -3,8 +3,7 @@ package tomlconfig
 import (
 	"errors"
 
-	"github.com/simelo/rextporter/src/configlocator"
-	"github.com/simelo/rextporter/src/core"
+	"github.com/simelo/rextporter/src/config"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 )
@@ -28,7 +27,7 @@ type mainConfig struct {
 func (cf configFromFile) readTomlFile(data interface{}) error {
 	if len(cf.filePath) == 0 {
 		log.Errorln("file path is required to read toml config")
-		return core.ErrKeyEmptyValue
+		return config.ErrKeyEmptyValue
 	}
 	viper.SetConfigType("toml")
 	viper.SetConfigFile(cf.filePath)
@@ -148,11 +147,8 @@ func readRootStructure(mainConf mainConfig) (rootConf RootConfig, err error) {
 
 // ReadConfigFromFileSystem will read the config from the file system.
 func ReadConfigFromFileSystem(filePath string) (rootConf RootConfig, err error) {
-	const generalScopeErr = "error getting config values from file system"
-	mainConfigPath := configlocator.MainFile()
-	if len(filePath) != 0 {
-		mainConfigPath = filePath
-	}
+	// TODO(denisacostaq@gmail.com): use configlocator.MainFile() here if filePath is empty
+	mainConfigPath := filePath
 	mainConfReader := configFromFile{filePath: mainConfigPath}
 	var mainConf mainConfig
 	if mainConf, err = mainConfReader.readMainConf(); err != nil {

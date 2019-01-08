@@ -7,10 +7,10 @@ import (
 	"path/filepath"
 
 	"github.com/alecthomas/template"
-	"github.com/simelo/rextporter/src/core"
+	"github.com/simelo/rextporter/src/config"
 	"github.com/simelo/rextporter/src/toml2config"
 	"github.com/simelo/rextporter/src/tomlconfig"
-	"github.com/simelo/rextporter/test/integration/testrand"
+	"github.com/simelo/rextporter/test/util/testrand"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -46,8 +46,16 @@ const metricsConfigFileContenTemplate = `# All metrics to be measured.{{range .M
 
 	[metrics.options]
 		type = "{{.Options.Type}}"
-		description = "{{.Options.Description}}"
-
+		description = "{{.Options.Description}}"{{if gt (len .Options.Labels) 0}} {{$len := (len .Options.Labels)}}
+		[[metrics.options.labels]]{{range .Options.Labels}}
+			name = "{{.Name}}"
+			path = "{{.Path}}"
+{{end}}{{end}}
+	
+	[metrics.histogramOptions]{{if gt (len .HistogramOptions.Buckets) 0}} {{$len := (len .HistogramOptions.Buckets)}}
+		buckets = [{{range $i, $v := .HistogramOptions.Buckets}}{{$v}}{{if lt (inc $i) $len}}, {{end}}{{end}}]{{end}}{{if gt (len .HistogramOptions.ExponentialBuckets) 0}} {{$len := (len .HistogramOptions.ExponentialBuckets)}}
+		exponentialBuckets = [{{range $i, $v := .HistogramOptions.ExponentialBuckets}}{{$v}}{{if lt (inc $i) $len}}, {{end}}{{end}}]
+{{end}}
 {{end}}
 `
 
@@ -75,14 +83,14 @@ const serviceResourcePathsFileContentTemplate = `{{range .}}[[ResourcePaths]]
 func createConfigFile(tmplContent, path string, data interface{}) (err error) {
 	if len(tmplContent) == 0 || len(path) == 0 {
 		log.Errorln("template content should not be empty")
-		return core.ErrKeyEmptyValue
+		return config.ErrKeyEmptyValue
 	}
 	tmpl := template.New("fileConfig")
 	var templateEngine *template.Template
 	funcs := template.FuncMap{"inc": func(i int) int { return i + 1 }}
 	if templateEngine, err = tmpl.New("").Funcs(funcs).Parse(tmplContent); err != nil {
 		log.WithField("template", tmplContent).Errorln("Can not parse template content")
-		return core.ErrKeyDecodingFile
+		return config.ErrKeyDecodingFile
 	}
 	var configFile *os.File
 	if configFile, err = os.Create(path); err != nil {
@@ -125,12 +133,12 @@ func createFullConfig(mainConfFilePath string, conf tomlconfig.RootConfig) (err 
 		MetricsForServicesConfPath:       mtrs4ServiceConfPath,
 		ResourcePathsForServicesConfPath: res4ServiceConfPath,
 	}
-	if err = createConfigFile(mainConfigFileContenTemplate, mainConfFilePath, confData); err != nil {
-		log.Errorln("error writing main config")
+	if e := createConfigFile(mainConfigFileContenTemplate, mainConfFilePath, confData); e != nil {
+		log.WithError(e).Errorln("error writing main config")
 		err = ErrKeyWritingFsStructure
 	}
-	if err = createConfigFile(servicesConfigFileContenTemplate, srvsConfPath, conf); err != nil {
-		log.Errorln("error writing service config")
+	if e := createConfigFile(servicesConfigFileContenTemplate, srvsConfPath, conf); e != nil {
+		log.WithError(e).Errorln("error writing service config")
 		err = ErrKeyWritingFsStructure
 	}
 	mtrs4Srvs := make(map[string]string)
@@ -139,29 +147,29 @@ func createFullConfig(mainConfFilePath string, conf tomlconfig.RootConfig) (err 
 		mtrsConfDir := testrand.RFolderPath()
 		res4SrvsConfDir := testrand.RFolderPath()
 		dirs = []string{mtrsConfDir, res4SrvsConfDir}
-		if err = createDirectoriesWithFullDepth(dirs); err != nil {
-			log.WithError(err).Errorln("error creating directory")
+		if e := createDirectoriesWithFullDepth(dirs); e != nil {
+			log.WithError(e).Errorln("error creating directory")
 			return ErrKeyWritingFsStructure
 		}
 		mtrsConfPath := filepath.Join(mtrsConfDir, testrand.RName())
 		res4SrvsConfPath := filepath.Join(res4SrvsConfDir, testrand.RName())
 		mtrs4Srvs[srv.Name] = mtrsConfPath
 		res4Srvs[srv.Name] = res4SrvsConfPath
-		if err = createConfigFile(metricsConfigFileContenTemplate, mtrsConfPath, srv); err != nil {
-			log.Errorln("error writing metrics config")
+		if e := createConfigFile(metricsConfigFileContenTemplate, mtrsConfPath, srv); e != nil {
+			log.WithError(e).Errorln("error writing metrics config")
 			err = ErrKeyWritingFsStructure
 		}
-		if err = createConfigFile(serviceResourcePathsFileContentTemplate, res4SrvsConfPath, srv.ResourcePaths); err != nil {
-			log.Errorln("error writing service resource paths config")
+		if e := createConfigFile(serviceResourcePathsFileContentTemplate, res4SrvsConfPath, srv.ResourcePaths); e != nil {
+			log.WithError(e).Errorln("error writing service resource paths config")
 			err = ErrKeyWritingFsStructure
 		}
 	}
-	if err = createConfigFile(resourceForServicesConfFileContentTemplate, res4ServiceConfPath, res4Srvs); err != nil {
-		log.Errorln("error writing resources paths for services config")
+	if e := createConfigFile(resourceForServicesConfFileContentTemplate, res4ServiceConfPath, res4Srvs); e != nil {
+		log.WithError(e).Errorln("error writing resources paths for services config")
 		err = ErrKeyWritingFsStructure
 	}
-	if err = createConfigFile(metricsForServicesConfFileContenTemplate, mtrs4ServiceConfPath, mtrs4Srvs); err != nil {
-		log.Errorln("error writing metrics for service config")
+	if e := createConfigFile(metricsForServicesConfFileContenTemplate, mtrs4ServiceConfPath, mtrs4Srvs); e != nil {
+		log.WithError(e).Errorln("error writing metrics for service config")
 		err = ErrKeyWritingFsStructure
 	}
 	return err
@@ -177,7 +185,7 @@ func createDirectoriesWithFullDepth(dirs []string) (err error) {
 	return err
 }
 
-func getConfig(mainConfFilePath string) (rootConf core.RextRoot, err error) {
+func getConfig(mainConfFilePath string) (rootConf config.RextRoot, err error) {
 	rawConf, err := tomlconfig.ReadConfigFromFileSystem(mainConfFilePath)
 	if err != nil {
 		log.WithField("path", mainConfFilePath).Errorln("error reading config from file system")

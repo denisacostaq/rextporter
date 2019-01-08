@@ -7,7 +7,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/simelo/rextporter/src/cache"
-	"github.com/simelo/rextporter/src/core"
+	"github.com/simelo/rextporter/src/config"
 	"github.com/simelo/rextporter/src/scrapper"
 	"github.com/simelo/rextporter/src/util"
 	log "github.com/sirupsen/logrus"
@@ -20,7 +20,7 @@ type MetricsCollector struct {
 	defMetrics *defaultMetrics
 }
 
-func newMetricsCollector(c cache.Cache, conf core.RextRoot) (collector *MetricsCollector, err error) {
+func newMetricsCollector(c cache.Cache, conf config.RextRoot) (collector *MetricsCollector, err error) {
 	const generalScopeErr = "error creating collector"
 	defMetrics := newDefaultMetrics()
 	var metrics endpointData2MetricsConsumer
@@ -120,7 +120,9 @@ func collectCounters(metricsColl []constMetric, defMetrics *defaultMetrics, ch c
 					log.WithField("val", res.Val).Errorln(fmt.Sprintf("unable to get value %+v as float64", res.Val))
 				}
 			default:
-				log.WithField("val", res.Val).Errorln(fmt.Sprintf("unable to determine value %+v type", res.Val))
+				log.WithFields(log.Fields{
+					"val":  res.Val,
+					"type": fmt.Sprintf("%T", res.Val)}).Errorln("unable to determine value type in counter")
 			}
 			elapsed := time.Since(startScrappingInPool).Seconds()
 			defMetrics.scrapeDurations.addSeconds(elapsed, res.JobName, res.InstanceName)
@@ -201,7 +203,9 @@ func collectGauges(metricsColl []constMetric, defMetrics *defaultMetrics, ch cha
 					// FIXME(denisacostaq@gmail.com): onCollectFail(metricsColl[res.ConstMetricIdxOut], res.JobName, res.InstanceName, ch)
 				}
 			default:
-				log.WithField("val", res.Val).Errorln(fmt.Sprintf("unable to determine value %+v type", res.Val))
+				log.WithFields(log.Fields{
+					"val":  res.Val,
+					"type": fmt.Sprintf("%T", res.Val)}).Errorln("unable to determine value type in gauge")
 				// FIXME(denisacostaq@gmail.com): onCollectFail(metricsColl[res.ConstMetricIdxOut], res.JobName, res.InstanceName, ch)
 			}
 			elapsed := time.Since(startScrappingInPool).Seconds()
@@ -289,9 +293,9 @@ func (collector *MetricsCollector) Collect(ch chan<- prometheus.Metric) {
 	}
 	collector.defMetrics.reset()
 	for k := range collector.metrics {
-		counters := filterMetricsByKind(core.KeyMetricTypeCounter, collector.metrics[k])
-		gauges := filterMetricsByKind(core.KeyMetricTypeGauge, collector.metrics[k])
-		histograms := filterMetricsByKind(core.KeyMetricTypeHistogram, collector.metrics[k])
+		counters := filterMetricsByKind(config.KeyMetricTypeCounter, collector.metrics[k])
+		gauges := filterMetricsByKind(config.KeyMetricTypeGauge, collector.metrics[k])
+		histograms := filterMetricsByKind(config.KeyMetricTypeHistogram, collector.metrics[k])
 		collectCounters(counters, collector.defMetrics, ch)
 		collectGauges(gauges, collector.defMetrics, ch)
 		collectHistograms(histograms, collector.defMetrics, ch)

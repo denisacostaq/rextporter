@@ -1,0 +1,12 @@
+# Services configuration.
+[[services]]
+	name = "skycoin"
+	protocol = "http"
+	port = 6420
+	authType = "CSRF"
+	tokenHeaderKey = "X-CSRF-Token"
+	genTokenEndpoint = "/api/v1/csrf"
+	tokenKeyFromEndpoint = "csrf_token"
+
+	[services.location]
+		location = "localhost"

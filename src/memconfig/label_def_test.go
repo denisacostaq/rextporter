@@ -3,12 +3,12 @@ package memconfig
 import (
 	"testing"
 
-	"github.com/simelo/rextporter/src/core"
-	"github.com/simelo/rextporter/src/core/mocks"
+	"github.com/simelo/rextporter/src/config"
+	"github.com/simelo/rextporter/src/config/mocks"
 	"github.com/stretchr/testify/suite"
 )
 
-func newLabelDef(suite *labelDefConfSuit) core.RextLabelDef {
+func newLabelDef(suite *labelDefConfSuit) config.RextLabelDef {
 	return NewLabelDef(
 		suite.name,
 		suite.nodeSolver,
@@ -17,9 +17,9 @@ func newLabelDef(suite *labelDefConfSuit) core.RextLabelDef {
 
 type labelDefConfSuit struct {
 	suite.Suite
-	labelDef   core.RextLabelDef
+	labelDef   config.RextLabelDef
 	name       string
-	nodeSolver core.RextNodeSolver
+	nodeSolver config.RextNodeSolver
 }
 
 func (suite *labelDefConfSuit) SetupTest() {
@@ -126,7 +126,7 @@ func (suite *labelDefConfSuit) TestValidationShouldGoDownTroughFields() {
 	mockNodeSolver.AssertCalled(suite.T(), "Validate")
 }
 
-func setUpFakeValidationOn3rdPartyOverLabel(labelDef core.RextLabelDef) {
+func setUpFakeValidationOn3rdPartyOverLabel(labelDef config.RextLabelDef) {
 	nodeSolverStub := new(mocks.RextNodeSolver)
 	nodeSolverStub.On("Validate").Return(false)
 	labelDef.SetNodeSolver(nodeSolverStub)

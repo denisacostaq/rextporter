@@ -6,14 +6,14 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/simelo/rextporter/src/cache"
 	"github.com/simelo/rextporter/src/client"
-	"github.com/simelo/rextporter/src/core"
+	"github.com/simelo/rextporter/src/config"
 	"github.com/simelo/rextporter/src/scrapper"
 	"github.com/simelo/rextporter/src/util"
 	"github.com/simelo/rextporter/src/util/metrics"
 	log "github.com/sirupsen/logrus"
 )
 
-func createMetricsForwaders(conf core.RextRoot, fDefMetrics *metrics.DefaultFordwaderMetrics) (fordwaderScrappers []scrapper.FordwaderScrapper, err error) {
+func createMetricsForwaders(conf config.RextRoot, fDefMetrics *metrics.DefaultFordwaderMetrics) (fordwaderScrappers []scrapper.FordwaderScrapper, err error) {
 	generalScopeErr := "can not create metrics Middleware"
 	services := conf.GetServices()
 	for _, srvConf := range services {
@@ -41,7 +41,7 @@ type constMetric struct {
 
 type endpointData2MetricsConsumer map[string][]constMetric
 
-func createMetrics(cache cache.Cache, conf core.RextRoot, dataSourceResponseDurationDesc *prometheus.Desc) (metrics endpointData2MetricsConsumer, err error) {
+func createMetrics(cache cache.Cache, conf config.RextRoot, dataSourceResponseDurationDesc *prometheus.Desc) (metrics endpointData2MetricsConsumer, err error) {
 	generalScopeErr := "can not create metrics"
 	metrics = make(endpointData2MetricsConsumer)
 	for _, srvConf := range conf.GetServices() {
@@ -61,11 +61,11 @@ func createMetrics(cache cache.Cache, conf core.RextRoot, dataSourceResponseDura
 	return metrics, err
 }
 
-func createConstMetric(cache cache.Cache, resConf core.RextResourceDef, srvConf core.RextServiceDef, mtrConf core.RextMetricDef, nSolver core.RextNodeSolver, dataSourceResponseDurationDesc *prometheus.Desc) (metric constMetric, err error) {
+func createConstMetric(cache cache.Cache, resConf config.RextResourceDef, srvConf config.RextServiceDef, mtrConf config.RextMetricDef, nSolver config.RextNodeSolver, dataSourceResponseDurationDesc *prometheus.Desc) (metric constMetric, err error) {
 	generalScopeErr := "can not create metric " + mtrConf.GetMetricName()
 	if len(mtrConf.GetMetricName()) == 0 {
 		log.Errorln("metric name is required")
-		return metric, core.ErrKeyEmptyValue
+		return metric, config.ErrKeyEmptyValue
 	}
 	var ccf client.CacheableFactory
 	if ccf, err = client.CreateAPIRestCreator(resConf, srvConf, dataSourceResponseDurationDesc); err != nil {

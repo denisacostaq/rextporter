@@ -1,4 +1,4 @@
-package core
+package config
 
 import (
 	log "github.com/sirupsen/logrus"
@@ -154,13 +154,30 @@ func ValidateMetric(m RextMetricDef) (hasError bool) {
 		log.Errorln("type is required in metric config")
 	}
 	switch m.GetMetricType() {
-	case KeyMetricTypeCounter, KeyMetricTypeGauge, KeyMetricTypeHistogram:
+	case KeyMetricTypeHistogram:
+		opts := m.GetOptions()
+		var err error
+		var iVal interface{}
+		if iVal, err = opts.GetObject(OptKeyRextMetricDefHMetricBuckets); err != nil || iVal == nil {
+			hasError = true
+			log.Errorln("histogram metric should have some buckets defined")
+		}
+		buckets, okBuckets := iVal.([]float64)
+		if !okBuckets {
+			hasError = true
+			log.WithFields(log.Fields{"key": OptKeyRextMetricDefHMetricBuckets, "val": iVal}).Errorln("error getting buckets values, histogram should have buckets defined")
+		}
+		if len(buckets) == 0 {
+			hasError = true
+			log.Errorln("histogram should have buckets defined")
+		}
+	case KeyMetricTypeCounter, KeyMetricTypeGauge:
 	case KeyMetricTypeSummary:
 		hasError = true
 		log.Errorf("type %s is not supported yet\n", KeyMetricTypeSummary)
 	default:
 		hasError = true
-		log.Errorf("type should be one of %s, %s, %s or %s", KeyMetricTypeCounter, KeyMetricTypeGauge, KeyMetricTypeSummary, KeyMetricTypeHistogram)
+		log.WithFields(log.Fields{"current": m.GetMetricType(), "expected": []string{KeyMetricTypeCounter, KeyMetricTypeGauge, KeyMetricTypeSummary, KeyMetricTypeHistogram}}).Errorln("invalid metric kind")
 	}
 	if m.GetNodeSolver() == nil {
 		hasError = true

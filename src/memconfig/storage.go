@@ -1,7 +1,7 @@
 package memconfig
 
 import (
-	"github.com/simelo/rextporter/src/core"
+	"github.com/simelo/rextporter/src/config"
 )
 
 // OptionsMap in-memory key value store
@@ -22,7 +22,7 @@ func (m OptionsMap) GetString(key string) (string, error) {
 		if okStrVal {
 			return strVal, nil
 		}
-		return "", core.ErrKeyInvalidType
+		return "", config.ErrKeyInvalidType
 	}
 	return "", err
 }
@@ -37,7 +37,7 @@ func (m OptionsMap) GetObject(key string) (interface{}, error) {
 	if val, hasKey := m[key]; hasKey {
 		return val, nil
 	}
-	return "", core.ErrKeyNotFound
+	return "", config.ErrKeyNotFound
 }
 
 // SetObject save an general object
@@ -57,7 +57,7 @@ func (m OptionsMap) GetKeys() (keys []string) {
 }
 
 // Clone make a deep copy of the storage
-func (m OptionsMap) Clone() (core.RextKeyValueStore, error) {
+func (m OptionsMap) Clone() (config.RextKeyValueStore, error) {
 	clone := NewOptionsMap()
 	for k := range m {
 		clone[k] = m[k]

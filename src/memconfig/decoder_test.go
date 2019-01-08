@@ -3,11 +3,11 @@ package memconfig
 import (
 	"testing"
 
-	"github.com/simelo/rextporter/src/core"
+	"github.com/simelo/rextporter/src/config"
 	"github.com/stretchr/testify/suite"
 )
 
-func newDecoder(suite *decoderSuit) core.RextDecoderDef {
+func newDecoder(suite *decoderSuit) config.RextDecoderDef {
 	return NewDecoder(
 		suite.decoderType,
 		suite.options,
@@ -16,9 +16,9 @@ func newDecoder(suite *decoderSuit) core.RextDecoderDef {
 
 type decoderSuit struct {
 	suite.Suite
-	decoder     core.RextDecoderDef
+	decoder     config.RextDecoderDef
 	decoderType string
-	options     core.RextKeyValueStore
+	options     config.RextKeyValueStore
 }
 
 func (suite *decoderSuit) SetupTest() {

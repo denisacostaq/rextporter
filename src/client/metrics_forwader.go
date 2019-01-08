@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/simelo/rextporter/src/core"
+	"github.com/simelo/rextporter/src/config"
 	"github.com/simelo/rextporter/src/util"
 	"github.com/simelo/rextporter/src/util/metrics"
 	log "github.com/sirupsen/logrus"
@@ -23,14 +23,14 @@ type ProxyMetricClientCreator struct {
 }
 
 // CreateProxyMetricClientCreator create a ProxyMetricClientCreator with required info to create a metrics fordwader client
-func CreateProxyMetricClientCreator(resConf core.RextResourceDef, srvConf core.RextServiceDef, fDefMetrics *metrics.DefaultFordwaderMetrics) (cf ProxyMetricClientCreator, err error) {
+func CreateProxyMetricClientCreator(resConf config.RextResourceDef, srvConf config.RextServiceDef, fDefMetrics *metrics.DefaultFordwaderMetrics) (cf ProxyMetricClientCreator, err error) {
 	srvOpts := srvConf.GetOptions()
-	jobName, err := srvOpts.GetString(core.OptKeyRextServiceDefJobName)
+	jobName, err := srvOpts.GetString(config.OptKeyRextServiceDefJobName)
 	if err != nil {
 		log.WithError(err).Errorln("Can not find jobName")
 		return cf, err
 	}
-	instanceName, err := srvOpts.GetString(core.OptKeyRextServiceDefInstanceName)
+	instanceName, err := srvOpts.GetString(config.OptKeyRextServiceDefInstanceName)
 	if err != nil {
 		log.WithError(err).Errorln("Can not find instanceName")
 		return cf, err
@@ -86,10 +86,12 @@ func (client ProxyMetricClient) GetData() (data []byte, err error) {
 			}
 		}(time.Now().UTC())
 		if resp, err = httpClient.Do(client.req); err != nil {
+			log.WithFields(log.Fields{"err": err, "req": client.req}).Errorln("no success response")
 			errCause := fmt.Sprintln("can not do the request: ", err.Error())
 			return nil, util.ErrorFromThisScope(errCause, generalScopeErr)
 		}
 		if resp.StatusCode != http.StatusOK {
+			log.WithFields(log.Fields{"status": resp.Status, "req": client.req}).Errorln("no success response")
 			errCause := fmt.Sprintf("no success response, status %s", resp.Status)
 			return nil, util.ErrorFromThisScope(errCause, generalScopeErr)
 		}

@@ -1,0 +1,34 @@
+[[ResourcePaths]]
+	Name = "health"
+	Path = "/api/v1/health"
+	PathType = "rest_api"
+	nodeSolverType = "jsonPath"
+	MetricNames = ["health_seq", "health_fee", "health_unspents", "health_unconfirmed", "health_open_connections", "health_outgoing_connections", "health_incoming_connections", "health_user_verify_burn_factor", "health_user_verify_max_transaction_size", "health_user_verify_max_decimals", "health_unconfirmed_verify_burn_factor", "health_unconfirmed_verify_max_transaction_size", "health_unconfirmed_verify_max_decimals"]
+
+[[ResourcePaths]]
+	Name = "blockchain_metadata"
+	Path = "/api/v1/blockchain/metadata"
+	PathType = "rest_api"
+	nodeSolverType = "jsonPath"
+	MetricNames = ["blockchain_metadata_seq", "blockchain_metadata_fee", "blockchain_metadata_unspents", "blockchain_metadata_unconfirmed"]
+
+[[ResourcePaths]]
+	Name = "blockchain_progress"
+	Path = "/api/v1/blockchain/progress"
+	PathType = "rest_api"
+	nodeSolverType = "jsonPath"
+	MetricNames = ["blockchain_progress_current", "blockchain_progress_highest"]
+
+[[ResourcePaths]]
+	Name = "connections"
+	Path = "/api/v1/network/connections"
+	PathType = "rest_api"
+	nodeSolverType = "jsonPath"
+	MetricNames = ["connections_highest", "connections_burn_factor_hist", "connections_max_transaction_size", "connections_max_decimals"]
+
+
+[[ResourcePaths]]
+	Name = "metricsFordwader"
+	Path = "/api/v2/metrics"
+	PathType = "metrics_fordwader"
+	httpMethod = "GET"

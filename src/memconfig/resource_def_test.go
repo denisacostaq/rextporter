@@ -3,12 +3,12 @@ package memconfig
 import (
 	"testing"
 
-	"github.com/simelo/rextporter/src/core"
-	"github.com/simelo/rextporter/src/core/mocks"
+	"github.com/simelo/rextporter/src/config"
+	"github.com/simelo/rextporter/src/config/mocks"
 	"github.com/stretchr/testify/suite"
 )
 
-func newResourceDef(suite *resourceDefSuit) core.RextResourceDef {
+func newResourceDef(suite *resourceDefSuit) config.RextResourceDef {
 	return NewResourceDef(
 		suite.mType,
 		suite.resourceURI,
@@ -22,12 +22,12 @@ func newResourceDef(suite *resourceDefSuit) core.RextResourceDef {
 type resourceDefSuit struct {
 	suite.Suite
 	mType       string
-	resourceDef core.RextResourceDef
+	resourceDef config.RextResourceDef
 	resourceURI string
-	auth        core.RextAuthDef
-	decoder     core.RextDecoderDef
-	metrics     []core.RextMetricDef
-	options     core.RextKeyValueStore
+	auth        config.RextAuthDef
+	decoder     config.RextDecoderDef
+	metrics     []config.RextMetricDef
+	options     config.RextKeyValueStore
 }
 
 func (suite *resourceDefSuit) SetupTest() {
@@ -220,7 +220,7 @@ func (suite *resourceDefSuit) TestValidationShouldGoDownTroughFields() {
 	mockMetric2.AssertCalled(suite.T(), "Validate")
 }
 
-func setUpFakeValidationOn3rdPartyOverResource(res core.RextResourceDef) {
+func setUpFakeValidationOn3rdPartyOverResource(res config.RextResourceDef) {
 	authStub := new(mocks.RextAuthDef)
 	authStub.On("Validate").Return(false)
 	decoderStub := new(mocks.RextDecoderDef)

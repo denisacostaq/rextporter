@@ -1,39 +1,39 @@
 package memconfig
 
 import (
-	"github.com/simelo/rextporter/src/core"
+	"github.com/simelo/rextporter/src/config"
 	log "github.com/sirupsen/logrus"
 )
 
-// MetricDef implements the interface core.RextMetricDef
+// MetricDef implements the interface config.RextMetricDef
 type MetricDef struct {
 	name        string
 	mType       string
-	nodeSolver  core.RextNodeSolver
+	nodeSolver  config.RextNodeSolver
 	description string
-	labels      []core.RextLabelDef
-	options     core.RextKeyValueStore
+	labels      []config.RextLabelDef
+	options     config.RextKeyValueStore
 }
 
 // Clone make a deep copy of MetricDef or return an error if any
-func (m MetricDef) Clone() (cM core.RextMetricDef, err error) {
-	var cNs core.RextNodeSolver
+func (m MetricDef) Clone() (cM config.RextMetricDef, err error) {
+	var cNs config.RextNodeSolver
 	if m.GetNodeSolver() != nil {
 		if cNs, err = m.GetNodeSolver().Clone(); err != nil {
 			log.WithError(err).Errorln("can not clone node solver in metric")
 			return cM, err
 		}
 	}
-	var cLabels []core.RextLabelDef
+	var cLabels []config.RextLabelDef
 	for _, label := range m.labels {
-		var cLabel core.RextLabelDef
+		var cLabel config.RextLabelDef
 		if cLabel, err = label.Clone(); err != nil {
 			log.WithError(err).Errorln("can not clone labels in metric")
 			return cM, err
 		}
 		cLabels = append(cLabels, cLabel)
 	}
-	var cOpts core.RextKeyValueStore
+	var cOpts config.RextKeyValueStore
 	if cOpts, err = m.GetOptions().Clone(); err != nil {
 		log.WithError(err).Errorln("can not clone options in metric")
 		return cM, err
@@ -53,12 +53,12 @@ func (m MetricDef) GetMetricType() string {
 }
 
 // GetNodeSolver return solver type
-func (m MetricDef) GetNodeSolver() core.RextNodeSolver {
+func (m MetricDef) GetNodeSolver() config.RextNodeSolver {
 	return m.nodeSolver
 }
 
 // SetNodeSolver set the node solver
-func (m *MetricDef) SetNodeSolver(nodeSolver core.RextNodeSolver) {
+func (m *MetricDef) SetNodeSolver(nodeSolver config.RextNodeSolver) {
 	m.nodeSolver = nodeSolver
 }
 
@@ -83,17 +83,17 @@ func (m *MetricDef) SetMetricDescription(description string) {
 }
 
 // GetLabels return labels
-func (m MetricDef) GetLabels() []core.RextLabelDef {
+func (m MetricDef) GetLabels() []config.RextLabelDef {
 	return m.labels
 }
 
 // AddLabel receive label to be append to the current list
-func (m *MetricDef) AddLabel(label core.RextLabelDef) {
+func (m *MetricDef) AddLabel(label config.RextLabelDef) {
 	m.labels = append(m.labels, label)
 }
 
 // GetOptions return key/value pairs for extra options
-func (m *MetricDef) GetOptions() core.RextKeyValueStore {
+func (m *MetricDef) GetOptions() config.RextKeyValueStore {
 	if m.options == nil {
 		m.options = NewOptionsMap()
 	}
@@ -102,11 +102,11 @@ func (m *MetricDef) GetOptions() core.RextKeyValueStore {
 
 // Validate the metric, return true if any error is found
 func (m MetricDef) Validate() bool {
-	return core.ValidateMetric(&m)
+	return config.ValidateMetric(&m)
 }
 
 // NewMetricDef create a new metric definition
-func NewMetricDef(name, mType, description string, nodeSolver core.RextNodeSolver, options core.RextKeyValueStore, labels []core.RextLabelDef) *MetricDef {
+func NewMetricDef(name, mType, description string, nodeSolver config.RextNodeSolver, options config.RextKeyValueStore, labels []config.RextLabelDef) *MetricDef {
 	return &MetricDef{
 		name:        name,
 		mType:       mType,

@@ -3,12 +3,12 @@ package memconfig
 import (
 	"testing"
 
-	"github.com/simelo/rextporter/src/core"
-	"github.com/simelo/rextporter/src/core/mocks"
+	"github.com/simelo/rextporter/src/config"
+	"github.com/simelo/rextporter/src/config/mocks"
 	"github.com/stretchr/testify/suite"
 )
 
-func newMetricDef(suite *metricDefConfSuit) core.RextMetricDef {
+func newMetricDef(suite *metricDefConfSuit) config.RextMetricDef {
 	return NewMetricDef(
 		suite.metricName,
 		suite.metricType,
@@ -21,16 +21,16 @@ func newMetricDef(suite *metricDefConfSuit) core.RextMetricDef {
 
 type metricDefConfSuit struct {
 	suite.Suite
-	metricDef                                 core.RextMetricDef
+	metricDef                                 config.RextMetricDef
 	metricName, metricType, metricDescription string
-	nodeSolver                                core.RextNodeSolver
-	metricLabels                              []core.RextLabelDef
-	metricOptions                             core.RextKeyValueStore
+	nodeSolver                                config.RextNodeSolver
+	metricLabels                              []config.RextLabelDef
+	metricOptions                             config.RextKeyValueStore
 }
 
 func (suite *metricDefConfSuit) SetupTest() {
 	suite.metricName = "MySupperMetric"
-	suite.metricType = core.KeyMetricTypeCounter
+	suite.metricType = config.KeyMetricTypeCounter
 	suite.metricDescription = "This is all about ..."
 	suite.nodeSolver = &NodeSolver{nodePath: "sds"}
 	suite.nodeSolver.GetOptions()
@@ -237,7 +237,7 @@ func (suite *metricDefConfSuit) TestValidationShouldGoDownTroughFields() {
 	mockLabel2.AssertCalled(suite.T(), "Validate")
 }
 
-func setUpFakeValidationOn3rdPartyOverMetric(metricDef core.RextMetricDef) {
+func setUpFakeValidationOn3rdPartyOverMetric(metricDef config.RextMetricDef) {
 	nodeSolverStub := new(mocks.RextNodeSolver)
 	nodeSolverStub.On("Validate").Return(false)
 	labelStub1 := new(mocks.RextLabelDef)

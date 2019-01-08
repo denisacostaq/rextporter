@@ -28,6 +28,10 @@ The format is based on [Keep a Changelog](http://www.keepachangelog.com/en/1.0.0
 
   - `fordwader_scrape_duration_seconds`
 
+- [\#66](https://github.com/simelo/rextporter/issues/66)
+
+  - Change in configurations stucture, now metrics are grouped in resources paths, for more details chech the [README.md](https://github.com/simelo/rextporter/tree/master/README.md).
+
 - [\#30](https://github.com/simelo/rextporter/issues/30)
 
   - Capability to define multiple service modes.

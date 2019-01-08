@@ -1,16 +1,12 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
 	"net/http"
 	"os"
-	"strings"
 
-	"github.com/prometheus/common/expfmt"
-	"github.com/simelo/rextporter/src/core"
 	"github.com/simelo/rextporter/src/util/file"
-	"github.com/simelo/rextporter/test/integration/testrand"
+	"github.com/simelo/rextporter/test/util/testrand"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -55,6 +51,78 @@ func apiHealthHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func apiConnectionsHandlerHandler(w http.ResponseWriter, r *http.Request) {
+	const jsonConnectionsResponse = `
+	{
+    "connections": [
+        {
+            "id": 99107,
+            "address": "139.162.161.41:20002",
+            "last_sent": 1520675750,
+            "last_received": 1520675750,
+            "connected_at": 1520675500,
+            "outgoing": false,
+            "state": "introduced",
+            "mirror": 1338939619,
+            "listen_port": 20002,
+            "height": 180,
+            "user_agent": "skycoin:0.25.0",
+		    "is_trusted_peer": true,
+		    "unconfirmed_verify_transaction": {
+		        "burn_factor": 2,
+		        "max_transaction_size": 32768,
+		        "max_decimals": 3
+		    }
+        },
+        {
+            "id": 109548,
+            "address": "176.9.84.75:6000",
+            "last_sent": 1520675751,
+            "last_received": 1520675751,
+            "connected_at": 1520675751,
+            "state": "connected",
+            "outgoing": true,
+            "mirror": 0,
+            "listen_port": 6000,
+            "height": 0,
+            "user_agent": "",
+		    "is_trusted_peer": true,
+		    "unconfirmed_verify_transaction": {
+		        "burn_factor": 0,
+		        "max_transaction_size": 0,
+		        "max_decimals": 0
+		    }
+        },
+        {
+            "id": 99115,
+            "address": "185.120.34.60:6000",
+            "last_sent": 1520675754,
+            "last_received": 1520675754,
+            "connected_at": 1520673013,
+            "outgoing": false,
+            "state": "introduced",
+            "mirror": 1931713869,
+            "listen_port": 6000,
+            "height": 180,
+            "user_agent": "",
+		    "is_trusted_peer": true,
+		    "unconfirmed_verify_transaction": {
+		        "burn_factor": 0,
+		        "max_transaction_size": 0,
+		        "max_decimals": 0
+		    }
+        }
+    ]
+}
+`
+	if _, err := w.Write([]byte(jsonConnectionsResponse)); err != nil {
+		log.WithError(err).Errorln("unable to write response")
+		w.WriteHeader(http.StatusInternalServerError)
+	} else {
+		w.WriteHeader(http.StatusOK)
+	}
+}
+
 func exposedMetricHandler(w http.ResponseWriter, r *http.Request) {
 	const exposedMetricsResponse = `
 # HELP go_gc_duration_seconds1a18ac9b29c6 A summary of the GC invocation durations.
@@ -77,6 +145,9 @@ go_memstats_mallocs_total1a18ac9b29c6 9049
 promhttp_metric_handler_requests_total1a18ac9b29c6{code="200"} 0
 promhttp_metric_handler_requests_total1a18ac9b29c6{code="500"} 0
 promhttp_metric_handler_requests_total1a18ac9b29c6{code="503"} 0
+# HELP go_goroutines Number of goroutines that currently exist.
+# TYPE go_goroutines gauge
+go_goroutines 17
 `
 	if _, err := w.Write([]byte(exposedMetricsResponse)); err != nil {
 		log.WithError(err).Errorln("unable to write response")
@@ -150,42 +221,8 @@ func main() {
 	}
 	log.WithField("port", fakeNodePort).Infoln("starting fake server")
 	http.HandleFunc("/api/v1/health", apiHealthHandler)
+	http.HandleFunc("/api/v1/network/connections", apiConnectionsHandlerHandler)
 	http.HandleFunc("/metrics2", exposedMetricHandler)
 	http.HandleFunc("/a_few_metrics", exposedAFewMetrics)
 	log.WithError(http.ListenAndServe(fmt.Sprintf(":%d", fakeNodePort), nil)).Fatalln("server fail")
-}
-
-func findMetric(metrics []byte, mtrName string) (bool, error) {
-	var parser expfmt.TextParser
-	in := bytes.NewReader(metrics)
-	metricFamilies, err := parser.TextToMetricFamilies(in)
-	if err != nil {
-		log.WithError(err).Errorln("error, reading text format failed")
-		return false, core.ErrKeyDecodingFile
-	}
-	for _, mf := range metricFamilies {
-		if mtrName == *mf.Name {
-			return true, nil
-		}
-	}
-	return false, err
-}
-
-func getGaugeValue(metrics []byte, mtrName string) (float64, error) {
-	var parser expfmt.TextParser
-	in := bytes.NewReader(metrics)
-	metricFamilies, err := parser.TextToMetricFamilies(in)
-	if err != nil {
-		log.WithError(err).Errorln("error, reading text format failed")
-		return -1, core.ErrKeyDecodingFile
-	}
-	for _, mf := range metricFamilies {
-		if mtrName == *mf.Name {
-			if (*mf.Type).String() != strings.ToUpper(core.KeyMetricTypeGauge) {
-				return -1, core.ErrKeyInvalidType
-			}
-			return *mf.Metric[0].Gauge.Value, nil
-		}
-	}
-	return -1, core.ErrKeyNotFound
 }

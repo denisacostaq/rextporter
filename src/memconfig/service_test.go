@@ -3,22 +3,22 @@ package memconfig
 import (
 	"testing"
 
-	"github.com/simelo/rextporter/src/core"
-	"github.com/simelo/rextporter/src/core/mocks"
+	"github.com/simelo/rextporter/src/config"
+	"github.com/simelo/rextporter/src/config/mocks"
 	"github.com/stretchr/testify/suite"
 )
 
 type serviceConfSuit struct {
 	suite.Suite
-	srvConf   core.RextServiceDef
+	srvConf   config.RextServiceDef
 	basePath  string
 	protocol  string
-	auth      core.RextAuthDef
-	resources []core.RextResourceDef
-	options   core.RextKeyValueStore
+	auth      config.RextAuthDef
+	resources []config.RextResourceDef
+	options   config.RextKeyValueStore
 }
 
-func newService(suite *serviceConfSuit) core.RextServiceDef {
+func newService(suite *serviceConfSuit) config.RextServiceDef {
 	return NewServiceConf(suite.basePath, suite.protocol, suite.auth, suite.resources, suite.options)
 }
 
@@ -29,9 +29,9 @@ func (suite *serviceConfSuit) SetupTest() {
 	suite.auth.GetOptions()
 	suite.resources = nil
 	suite.options = NewOptionsMap()
-	_, err := suite.options.SetString(core.OptKeyRextServiceDefJobName, "v1")
+	_, err := suite.options.SetString(config.OptKeyRextServiceDefJobName, "v1")
 	suite.Nil(err)
-	_, err = suite.options.SetString(core.OptKeyRextServiceDefInstanceName, "v2")
+	_, err = suite.options.SetString(config.OptKeyRextServiceDefInstanceName, "v2")
 	suite.Nil(err)
 	suite.srvConf = newService(suite)
 }
@@ -139,7 +139,7 @@ func (suite *serviceConfSuit) TestValidationJobNameShouldNotBeEmpty() {
 	// NOTE(denisacostaq@gmail.com): When
 	opts := srvConf.GetOptions()
 	var pe bool
-	pe, err = opts.SetString(core.OptKeyRextServiceDefJobName, "")
+	pe, err = opts.SetString(config.OptKeyRextServiceDefJobName, "")
 	suite.True(pe)
 	suite.Nil(err)
 	hasError := srvConf.Validate()
@@ -155,7 +155,7 @@ func (suite *serviceConfSuit) TestValidationInstanceNameShouldNotBeEmpty() {
 
 	// NOTE(denisacostaq@gmail.com): When
 	opts := srvConf.GetOptions()
-	pe, err := opts.SetString(core.OptKeyRextServiceDefInstanceName, "")
+	pe, err := opts.SetString(config.OptKeyRextServiceDefInstanceName, "")
 	suite.True(pe)
 	suite.Nil(err)
 	hasError := srvConf.Validate()
@@ -200,7 +200,7 @@ func (suite *serviceConfSuit) TestValidationShouldGoDownTroughFields() {
 	mockResource2.AssertCalled(suite.T(), "Validate")
 }
 
-func setUpFakeValidationOn3rdPartyOverService(srv core.RextServiceDef) {
+func setUpFakeValidationOn3rdPartyOverService(srv config.RextServiceDef) {
 	authStub := new(mocks.RextAuthDef)
 	authStub.On("Validate").Return(false)
 	resourceStub := new(mocks.RextResourceDef)

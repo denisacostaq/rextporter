@@ -2,6 +2,7 @@ package exporter
 
 import (
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/simelo/rextporter/src/config"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -16,7 +17,7 @@ func newDataSourceMappedValue() job2I {
 	return make(job2I)
 }
 
-var instance4JobLabels = []string{"job", "instance"}
+var instance4JobLabels = []string{config.KeyLabelJob, config.KeyLabelInstance}
 
 func newDefaultMetrics() *defaultMetrics {
 	scrapeDurationsDesc := prometheus.NewDesc(

@@ -1,0 +1,4 @@
+servicesConfigTransport = "file" # "file" | "consulCatalog"
+servicesConfigPath = "tomlconfig/services.toml"
+metricsForServicesConfigPath = "tomlconfig/metricsForServices.toml"
+resourcePathsForServicesConfPath = "tomlconfig/resourcePathsForServices.toml"

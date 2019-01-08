@@ -3,19 +3,19 @@ package memconfig
 import (
 	"testing"
 
-	"github.com/simelo/rextporter/src/core"
-	"github.com/simelo/rextporter/src/core/mocks"
+	"github.com/simelo/rextporter/src/config"
+	"github.com/simelo/rextporter/src/config/mocks"
 	"github.com/stretchr/testify/suite"
 )
 
-func newRootConfig(suite *rootConfigSuite) core.RextRoot {
+func newRootConfig(suite *rootConfigSuite) config.RextRoot {
 	return NewRootConfig(suite.services)
 }
 
 type rootConfigSuite struct {
 	suite.Suite
-	services   []core.RextServiceDef
-	rootConfig core.RextRoot
+	services   []config.RextServiceDef
+	rootConfig config.RextRoot
 }
 
 func (suite *rootConfigSuite) SetupTest() {
@@ -85,7 +85,7 @@ func (suite *rootConfigSuite) TestValidationShouldGoDownTroughFields() {
 	mockService2.AssertCalled(suite.T(), "Validate")
 }
 
-func setUpFakeValidationOn3rdPartyOverRootConfig(root core.RextRoot) {
+func setUpFakeValidationOn3rdPartyOverRootConfig(root config.RextRoot) {
 	serviceStub := new(mocks.RextServiceDef)
 	serviceStub.On("Validate").Return(false)
 	root.AddService(serviceStub)

@@ -1,7 +1,6 @@
-documment over the [examples](https://github.com/denisacostaq/rextporter/blob/master/examples) about the meaning configs.
+enable HistogramVec and SummaryVec metrics
 
 use a config file from home if none exist
 
-config a skycoin node
-
-enable HistogramVec and SummaryVec metrics
+-config (default to your home config folder + simelo -> rextporter -> main.toml)
+Trough program parameter you can refer to main config path only, if you wan to use a custom path for services config file, metrics for services or metrics you should edit the main config it self. If you point to a not existent main config file it will use a default path and crete it in such default path. If you point to a non existent (or not specify one) services, metrics for services, or metrics path a default one will be create in such path.

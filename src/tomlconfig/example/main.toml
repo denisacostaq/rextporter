@@ -1,4 +1,0 @@
-servicesConfigTransport = "file" # "file" | "consulCatalog"
-servicesConfigPath = "/home/adacosta/.config/simelo/rextporter/services.toml"
-metricsForServicesConfigPath = "/home/adacosta/.config/simelo/rextporter/metricsForServices.toml"
-resourcePathsForServicesConfPath = "/home/adacosta/.config/simelo/rextporter/resourcePathsForServices.toml"
