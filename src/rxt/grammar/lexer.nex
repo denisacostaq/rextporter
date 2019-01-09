@@ -1,101 +1,62 @@
+
+<                     { emit_obj("CTX", rootEnv) }
 /[#].*\n/             { /* eat up comments */ }
-/[\n][ \t\n]*/        { ii := indent( yylex.Text() ); fmt.Println("lexer -- ", mmm[ii.tkId], ii.tkVal, ii.tkId); lval.identVal = ii.tkVal; return ii.tkId; }
-/[ \t]+/              { /*fmt.Println("lexer -- ", "SPACES2", yylex.Text())*/ /* eat up whitespace */ }
-/AAA/                 { fmt.Println("lexer ------------- EOL"); return EOL }
-/DATASET/             { return DATASET }
-/FOR SERVICE/         { fmt.Println("lexer -- ", yylex.Text()); return FOR_SERVICE }
-/FOR STACK/           { fmt.Println("lexer -- ", yylex.Text()); return FOR_STACK }
-/DEFINE AUTH/         { fmt.Println("lexer -- ", yylex.Text()); return DEFINE_AUTH }
-/AS/                  { fmt.Println("lexer -- ", yylex.Text()); return AS }
-/SET/                 { fmt.Println("lexer -- ", yylex.Text()); return SET }
-/TO/                  { fmt.Println("lexer -- ", yylex.Text()); return TO }
-/GET/                 { fmt.Println("lexer -- ", yylex.Text()); return GET }
-/POST/                { fmt.Println("lexer -- ", yylex.Text()); return POST }
-/FROM/                { fmt.Println("lexer -- ", yylex.Text()); return FROM }
-/HELP/                { fmt.Println("lexer -- ", yylex.Text()); return HELP }
-/EXTRACT USING/       { fmt.Println("lexer -- ", yylex.Text()); return EXTRACT_USING }
-/METRIC/              { fmt.Println("lexer -- ", yylex.Text()); return METRIC }
-/NAME/                { fmt.Println("lexer -- ", yylex.Text()); return NAME }
-/TYPE/                { fmt.Println("lexer -- ", yylex.Text()); return TYPE }
-/GAUGE/               { fmt.Println("lexer -- ", yylex.Text()); return GAUGE }
-/COUNTER/             { fmt.Println("lexer -- ", yylex.Text()); return COUNTER }
-/HISTOGRAM/           { fmt.Println("lexer -- ", yylex.Text()); return HISTOGRAM }
-/SUMMARY/             { fmt.Println("lexer -- ", yylex.Text()); return SUMMARY }
-/DESCRIPTION/         { fmt.Println("lexer -- ", yylex.Text()); return DESCRIPTION }
-/LABELS/              { /*fmt.Println("lexer -- ", yylex.Text(), yylex.Text());*/ return LABELS }
-/,[ \n\t]*/                   { lval.strval = yylex.Text(); /*fmt.Println("lexer -- ", "COMMA", yylex.Text());*/ return COMMA }
-/"[^"]*"/             { lval.strval = yylex.Text(); fmt.Println("lexer -- ", "STR_LITERAL", yylex.Text()); return STR_LITERAL }
-/'[^']*'/             { lval.strval = yylex.Text(); fmt.Println("lexer -- ", yylex.Text()); return RESOURCE_PATH }
-/[a-z_][a-z0-9_]*/    { fmt.Println("lexer -- ", "IDENTIFIER", yylex.Text()); return IDENTIFIER }
-/./                   { fmt.Println("lexer -- ", "*", yylex.Text()) }
+/,[ \n\t]*/           { emit_str("PNC", token()[:1]) }
+/[\n][ \t\n]*/        { indent( token() ) }
+/[ \t]+/              { /* eat up whitespace */ }
+/DATASET|FOR SERVICE|FOR STACK|DEFINE AUTH|AS|SET|TO|GET|POST|FROM|EXTRACT USING|METRIC|NAME|TYPE|GAUGE|COUNTER|HISTOGRAM|SUMMARY|DESCRIPTION|LABELS/ { emit_str("KEY", token()) }
+/"[^"]*"/             { emit_str("STR", token()) }
+/'[^']*'/             { emit_str("STR", token()) }
+/[a-z_][a-z0-9_]*/    { emit_str("VAR", token()) }
+/./                   { emit_str("UNK", token()) }
+>                     { /* nothing to do at end of file */ }
 //
-
-package main
-import ("os"; "fmt")
-
-type tkIdent struct {
-  tkId int
-  tkVal int
-}
-
-var indent_level int
-var indent_stack []int
-func indent(whitespace string) tkIdent {
-  level := len(whitespace) - 1
-  idx_last_eol := strings.LastIndexByte(whitespace, 10)
-  if idx_last_eol != -1 {
-    level -= idx_last_eol
-  }
-  if level > indent_level {
-    // Open block
-    indent_stack = append(indent_stack, indent_level)
-    indent_level = level
-    return tkIdent{tkId: BLK , tkVal: indent_level}
-  } else {
-    if level == indent_level {
-      // Same block
-      return tkIdent{tkId: EOL , tkVal: indent_level}
+package grammar
+import "os"
+func LexTheRxt(handler TokenHandler, rootEnv interface{}) {
+  lex := NewLexer(os.Stdin)
+  indent_level := 0
+  indent_stack := make([]int, 5)
+  token := func() string { return lex.Text() }
+  emit_str := handler.EmitStr
+  emit_int := handler.EmitInt
+  emit_obj := handler.EmitObj
+  indent := func(whitespace string) {
+    level := len(whitespace) - 1
+    idx_last_eol := strings.LastIndexByte(whitespace, 10)
+    if idx_last_eol != -1 {
+      level -= idx_last_eol
+    }
+    if level > indent_level {
+      // Open block
+      indent_stack = append(indent_stack, indent_level)
+      indent_level = level
+      emit_int( "BLK" , indent_level )
     } else {
-      // Close block
-      if level == 0 && indent_level == 0 {
-        fmt.Println("lexerrrrrrrrrrrrrrrrrrrrrrr")
-      return tkIdent{tkId: EOB , tkVal: indent_level}
-      }
-
-      idx := len(indent_stack)
-      for level < indent_level && idx > 0 {
-        tt := tkIdent{tkId: EOB , tkVal: indent_level}
-        idx = idx - 1
-        indent_level = indent_stack[idx]
-        return tt
-      }
-      indent_stack = indent_stack[:idx]
       if level == indent_level {
-        return tkIdent{tkId: EOL , tkVal: indent_level}
+        // Same block
+        emit_int( "EOL" , indent_level )
       } else {
-        return tkIdent{tkId: BIE , tkVal: indent_level}
+        // Close block
+        if level == 0 && indent_level == 0 {
+          return
+        }
+
+        idx := len(indent_stack)
+        for level < indent_level && idx > 0 {
+          emit_int( "EOB" , indent_level )
+          idx = idx - 1
+          indent_level = indent_stack[idx]
+        }
+        indent_stack = indent_stack[:idx]
+        if level == indent_level {
+          emit_int( "EOL" , indent_level )
+        } else {
+          emit_int( "BIE" , indent_level )
+        }
       }
     }
   }
+  NN_FUN(lex)
 }
 
-var mmm map[int]string
-func main() {
-  mmm = map[int]string{BIE: "BIE", BLK: "BLK", EOB: "EOB", EOL: "EOL", CTX: "CTX"}
-
-  // fmt.Println("lexer -- ", "BIE", BIE)
-  // fmt.Println("lexer -- ", "BLK", BLK)
-  // fmt.Println("lexer -- ", "EOB", EOB)
-  // fmt.Println("lexer -- ", "EOL", EOL)
-  // fmt.Println("lexer -- ", "CTX", CTX)
-	indent_level = 0
-	indent_stack = make([]int, 5)
-	yyErrorVerbose = true
-	filename := "/usr/share/gocode/src/github.com/simelo/rextporter/src/rxt/testdata/skyexample.rxt"
-	file, err := os.Open(filename)
-	if err != nil {
-		panic(err)
-	}
-	e := yyParse(NewLexer(file))
-	fmt.Println("lexer -- ", "Return code:", e)
-}
