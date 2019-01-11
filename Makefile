@@ -64,8 +64,7 @@ lint: mocks ## Run linters. Use make install-linters first.
 	go vet -all ./...
 	/tmp/bin/golangci-lint run -c .golangci.yml ./...
 
-check:
-	test
+check: lint test-grammar test ## Perform self-tests
 
 install-linters: ## Install linters
 	go get -u github.com/FiloSottile/vendorcheck

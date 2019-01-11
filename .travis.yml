@@ -10,11 +10,11 @@ services:
 before_install:
   - mkdir /tmp/skydata
   - wget -c --progress=bar -O /tmp/skydata/blockchain-180.db https://github.com/skycoin/skycoin/raw/develop/src/api/integration/testdata/blockchain-180.db
-  - docker container ls
-  - docker run --detach --rm --name skycoin-blockchain-180 -v /tmp/skydata:/tmp/skydata -p 6000:6000 -p 6420:6420 skycoin/skycoin:develop -db-path /tmp/skydata/blockchain-180.db -db-read-only=true -disable-networking=false -download-peerlist=false -launch-browser=false -enable-all-api-sets=true
+  - if [ "$TRAVIS_OS_NAME" != "osx" ]; then docker container ls ; fi
+  - if [ "$TRAVIS_OS_NAME" != "osx" ]; then docker run --detach --rm --name skycoin-blockchain-180 -v /tmp/skydata:/tmp/skydata -p 6000:6000 -p 6420:6420 skycoin/skycoin:develop -db-path /tmp/skydata/blockchain-180.db -db-read-only=true -disable-networking=false -download-peerlist=false -launch-browser=false -enable-all-api-sets=true ; fi
   - sleep 5
-  - docker images
-  - docker container ls
+  - if [ "$TRAVIS_OS_NAME" != "osx" ]; then docker images ; fi
+  - if [ "$TRAVIS_OS_NAME" != "osx" ]; then docker container ls ; fi
 
 matrix:
   include:
@@ -39,16 +39,17 @@ script:
   - make lint
   - make test-386
   - make test-amd64
-  - curl http://localhost:6420/api/v1/network/connections
-  - make integration-test-386
-  - make integration-test-amd64
+  # Probe Docker container to know it's up and running
+  - if [ "$TRAVIS_OS_NAME" != "osx" ]; then curl http://localhost:6420/api/v1/network/connections ; fi
+  - if [ "$TRAVIS_OS_NAME" != "osx" ]; then make integration-test-386 ; fi
+  - if [ "$TRAVIS_OS_NAME" != "osx" ]; then make integration-test-amd64 ; fi
 
 after_script:
-  - docker images
-  - docker container ls
-  - docker container stop skycoin-blockchain-180
-  - docker container ls
-  - docker images
+  - if [ "$TRAVIS_OS_NAME" != "osx" ]; then docker images ; fi
+  - if [ "$TRAVIS_OS_NAME" != "osx" ]; then docker container ls ; fi
+  - if [ "$TRAVIS_OS_NAME" != "osx" ]; then docker container stop skycoin-blockchain-180 ; fi
+  - if [ "$TRAVIS_OS_NAME" != "osx" ]; then docker images ; fi
+  - if [ "$TRAVIS_OS_NAME" != "osx" ]; then docker container ls ; fi
 
 notifications:
   email: false
