@@ -3,6 +3,7 @@
  
 build-grammar: ## Generate source code for REXT grammar
 	nex -s src/rxt/grammar/lexer.nex
+	goyacc -o src/rxt/grammar/y.go src/rxt/grammar/parser.go.y
 
 mocks: ## Create all mock files for unit tests
 	echo "Generating mock files"
