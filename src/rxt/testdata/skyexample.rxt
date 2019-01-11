@@ -1,45 +1,70 @@
-
 DATASET
-    FOR SERVICE skycoin
-    FOR STACK   skyfiber   
-
+    BLKBLK FOR SERVICE skycoin
+    EOLEOL FOR STACK   skyfiber
+    EOLEOL
+    
     DEFINE AUTH rest_csrf AS "skyauth"
-        SET "url" TO "/api/v1/csrf"
-        SET "method" TO "GET"
-        SET "header" TO "X-CSRF-Token"
-        SET "json_path" TO "csrf_token"
-
+        BLKBLK WITH OPTIONS
+            BLKBLK SET "url" TO "/api/v1/csrf"
+            EOLEOL SET "method" TO "GET"
+            EOLEOL SET "header" TO "X-CSRF-Token"
+            EOLEOL SET "json_path" TO "csrf_token"
+        EOBEOB
+    EOBEOB
+    
     GET forward_metrics FROM '/api/v2/metrics'
-        SET "prefix" TO "skycoinexample"
+        BLKBLK WITH OPTIONS
+            BLKBLK SET "prefix" TO "skycoinexample"
+        EOBEOB
+    EOBEOB
 
     GET rest_api FROM '/api/v1/health'
-        SET "auth" TO "skyauth"
-        EXTRACT USING "jsonpath"
-            METRIC
-                NAME "skycoin_auth_csrf_enabled"
-                TYPE GAUGE
-                SET "path" TO "csrf_enabled"
-            METRIC
-                NAME "skycoin_blockchain_burn_factor"
-                TYPE COUNTER
-                SET "path" TO "user_verify_transaction.burn_factor"
-            METRIC
-                NAME "skycoin_blockchain_block_head"
-                TYPE COUNTER
-                SET "path" TO "blockchain.head.seq"
-
+        BLKBLK WITH OPTIONS
+            BLKBLK SET "auth" TO "skyauth"
+            EOBEOB
+        EOLEOL EXTRACT USING "jsonpath"
+            BLKBLK METRIC
+                BLKBLK NAME "skycoin_auth_csrf_enabled"
+                EOLEOL TYPE GAUGE
+                EOLEOL WITH OPTIONS
+                    BLKBLK SET "path" TO "csrf_enabled"
+                EOBEOB
+            EOBEOB
+            EOLEOL METRIC
+                BLKBLK NAME "skycoin_blockchain_burn_factor"
+                EOLEOL TYPE COUNTER
+                EOLEOL WITH OPTIONS
+                    BLKBLK SET "path" TO "user_verify_transaction.burn_factor"
+                    EOBEOB
+            EOBEOB
+            EOLEOL METRIC
+                BLKBLK NAME "skycoin_blockchain_block_head"
+                EOLEOL TYPE COUNTER
+                EOLEOL WITH OPTIONS
+                    BLKBLK SET "path" TO "blockchain.head.seq"
+                EOBEOB
+            EOBEOB
+        EOBEOB
+EOBEOB
     GET rest_api FROM '/api/v1/network/connections'
-        SET "auth" TO "skyauth"
-        EXTRACT USING "jsonpath"
-            METRIC
-                NAME "skycoin_pex_connections"
-                TYPE COUNTER
-                LABELS "state", "outgoing", "listen_port", "user_agent",
+        BLKBLK WITH OPTIONS
+            BLKBLK SET "auth" TO "skyauth"
+        EOBEOB
+        EOLEOL EXTRACT USING "jsonpath"
+            BLKBLK METRIC
+                BLKBLK NAME "skycoin_pex_connections"
+                EOLEOL TYPE COUNTER
+                EOLEOL LABELS "state", "outgoing", "listen_port", "user_agent",
                        "is_trusted", "burn_factor", "max_txn_size",
                        "max_decimals", "height"
-                SET "path" TO "connections[*]"
-                SET "label_path:is_trusted"   TO "is_trusted_peer"
-                SET "label_path:burn_factor"  TO "unconfirmed_verify_transaction.burn_factor"
-                SET "label_path:max_txn_size" TO "unconfirmed_verify_transaction.max_transaction_size"
-                SET "label_path:max_decimals" TO "unconfirmed_verify_transaction.max_decimals"
+                EOLEOL WITH OPTIONS
+                    BLKBLK SET "path" TO "connections[*]"
+                    EOLEOL SET "label_path:is_trusted"   TO "is_trusted_peer"
+                    EOLEOL SET "label_path:burn_factor"  TO "unconfirmed_verify_transaction.burn_factor"
+                    EOLEOL SET "label_path:max_txn_size" TO "unconfirmed_verify_transaction.max_transaction_size"
+                    EOLEOL SET "label_path:max_decimals" TO "unconfirmed_verify_transaction.max_decimals"
+                EOBEOB
+            EOBEOB
+        EOBEOB
+    EOBEOB
 

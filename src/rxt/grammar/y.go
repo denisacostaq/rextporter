@@ -8,10 +8,13 @@ import __yyfmt__ "fmt"
 //line parser.go.y:2
 import (
 	"errors"
+
 	"fmt"
+	"github.com/davecgh/go-spew/spew"
 	"github.com/simelo/rextporter/src/config"
-	"github.com/simelo/rextporter/src/core"
-	// "github.com/davecgh/go-spew/spew"
+	"github.com/simelo/rextporter/src/memconfig"
+	"strings"
+	// "os"
 	// "github.com/simelo/rextporter/src/util"
 )
 
@@ -20,43 +23,9 @@ var (
 	ErrBlockLevelOverflow  = errors.New("Too many nested syntax levels")
 )
 
-type parserEnv struct {
-	env     core.RextEnv
-	scraper core.RextServiceScraper
-}
-
 type strTuple struct {
 	key string
 	val string
-}
-
-type mainSecTuple struct {
-	src core.RextDataSource
-	key string
-	val interface{}
-}
-
-type metricDef struct {
-	mname string
-	mtype string
-	mdesc string
-	mlbls []string
-	opts  core.RextKeyValueStore
-}
-
-// FIXME : Not global. Parser stack ? TLS ?
-var root parserEnv
-var metric metricDef
-
-// TODO: metricDef should implement core.RextMetricDef
-
-func value_for_str(str string) string {
-	// FIXME: Support string literals
-	return str[1 : len(str)-1]
-}
-
-func newOption() core.RextKeyValueStore {
-	return config.NewOptionsMap()
 }
 
 func newStrTuple(s1, s2 string) *strTuple {
@@ -66,145 +35,107 @@ func newStrTuple(s1, s2 string) *strTuple {
 	}
 }
 
-func newMainDef(key string, value interface{}) *mainSecTuple {
-	return &mainSecTuple{
-		src: nil,
-		key: key,
-		val: value,
-	}
+// FIXME : Not global. Parser stack ? TLS ?
+var root config.RextRoot
+var service config.RextServiceDef
+
+func init() {
+	// TODO(denisacostaq@gmail.com): services
+	root = memconfig.NewRootConfig(nil)
+	service = &memconfig.Service{}
 }
 
-func newMainSrc(src core.RextDataSource) *mainSecTuple {
-	return &mainSecTuple{
-		src: src,
-		key: "",
-		val: nil,
-	}
-}
-
-func getRootEnv() *parserEnv {
-	return &root
-}
-
-func (m *metricDef) GetMetricName() string {
-	return m.mname
-}
-
-func (m *metricDef) GetMetricType() string {
-	return m.mtype
-}
-
-func (m *metricDef) GetMetricDescription() string {
-	return m.mdesc
-}
-
-func (m *metricDef) GetMetricLabels() []string {
-	return m.mlbls
-}
-
-func (m *metricDef) SetMetricName(name string) {
-	m.mname = name
-}
-
-func (m *metricDef) SetMetricType(typeid string) {
-	m.mtype = typeid
-}
-
-func (m *metricDef) SetMetricDescription(desc string) {
-	m.mdesc = desc
-}
-
-func (m *metricDef) SetMetricLabels(labels []string) {
-	m.mlbls = labels
-}
-
-func (m *metricDef) GetOptions() core.RextKeyValueStore {
-	return nil
-}
-
-//line parser.go.y:123
+//line parser.go.y:44
 type yySymType struct {
-	yys      int
-	root     core.RextServiceScraper
-	options  core.RextKeyValueStore
-	mains    []mainSecTuple
-	mainsec  *mainSecTuple
-	exts     []core.RextMetricsExtractor
-	extract  core.RextMetricsExtractor
-	metrics  []core.RextMetricDef
-	metric   core.RextMetricDef
-	key      string
-	strval   string
-	strlist  []string
-	pair     *strTuple
-	identVal int
+	yys        int
+	root       config.RextRoot
+	service    config.RextServiceDef
+	services   []config.RextServiceDef
+	resource   config.RextResourceDef
+	resources  []config.RextResourceDef
+	decoder    config.RextDecoderDef
+	nodeSolver config.RextNodeSolver
+	metric     config.RextMetricDef
+	metrics    []config.RextMetricDef
+	label      config.RextLabelDef
+	auth       config.RextAuthDef
+	options    config.RextKeyValueStore
+	key        string
+	strval     string
+	strlist    []string
+	pair       *strTuple
+	identVal   int
 }
 
-const COUNTER = 57346
-const GAUGE = 57347
-const HISTOGRAM = 57348
-const SUMMARY = 57349
-const COMMA = 57350
-const STR_LITERAL = 57351
-const RESOURCE_PATH = 57352
-const AS = 57353
-const BIE = 57354
-const BLK = 57355
-const EOB = 57356
-const EOL = 57357
-const CTX = 57358
-const DATASET = 57359
-const DEFINE_AUTH = 57360
-const DESCRIPTION = 57361
-const EXTRACT_USING = 57362
-const FOR_SERVICE = 57363
-const FOR_STACK = 57364
-const FROM = 57365
-const HELP = 57366
-const GET = 57367
-const IDENTIFIER = 57368
-const LABELS = 57369
-const METRIC = 57370
-const NAME = 57371
-const POST = 57372
-const SET = 57373
-const TO = 57374
-const TYPE = 57375
+const GET = 57346
+const POST = 57347
+const COUNTER = 57348
+const GAUGE = 57349
+const HISTOGRAM = 57350
+const SUMMARY = 57351
+const IDENTIFIER = 57352
+const STR_LITERAL = 57353
+const RESOURCE_PATH = 57354
+const FROM = 57355
+const HELP = 57356
+const LABELS = 57357
+const METRIC = 57358
+const NAME = 57359
+const SET = 57360
+const TYPE = 57361
+const TO = 57362
+const DESCRIPTION = 57363
+const WITH_OPTIONS = 57364
+const AS = 57365
+const BIE = 57366
+const BLK = 57367
+const EOB = 57368
+const EOL = 57369
+const CTX = 57370
+const EOF = 57371
+const COMMA = 57372
+const DEFINE_AUTH = 57373
+const EXTRACT_USING = 57374
+const FOR_SERVICE = 57375
+const FOR_STACK = 57376
+const DATASET = 57377
 
 var yyToknames = [...]string{
 	"$end",
 	"error",
 	"$unk",
+	"GET",
+	"POST",
 	"COUNTER",
 	"GAUGE",
 	"HISTOGRAM",
 	"SUMMARY",
-	"COMMA",
+	"IDENTIFIER",
 	"STR_LITERAL",
 	"RESOURCE_PATH",
+	"FROM",
+	"HELP",
+	"LABELS",
+	"METRIC",
+	"NAME",
+	"SET",
+	"TYPE",
+	"TO",
+	"DESCRIPTION",
+	"WITH_OPTIONS",
 	"AS",
 	"BIE",
 	"BLK",
 	"EOB",
 	"EOL",
 	"CTX",
-	"DATASET",
+	"EOF",
+	"COMMA",
 	"DEFINE_AUTH",
-	"DESCRIPTION",
 	"EXTRACT_USING",
 	"FOR_SERVICE",
 	"FOR_STACK",
-	"FROM",
-	"HELP",
-	"GET",
-	"IDENTIFIER",
-	"LABELS",
-	"METRIC",
-	"NAME",
-	"POST",
-	"SET",
-	"TO",
-	"TYPE",
+	"DATASET",
 }
 var yyStatenames = [...]string{}
 
@@ -212,7 +143,7 @@ const yyEofCode = 1
 const yyErrCode = 2
 const yyInitialStackSize = 16
 
-//line parser.go.y:389
+//line parser.go.y:440
 
 //line yacctab:1
 var yyExca = [...]int{
@@ -223,80 +154,84 @@ var yyExca = [...]int{
 
 const yyPrivate = 57344
 
-const yyLast = 89
+const yyLast = 98
 
 var yyAct = [...]int{
 
-	17, 63, 16, 54, 74, 36, 32, 19, 70, 64,
-	38, 37, 15, 33, 18, 84, 41, 14, 34, 11,
-	8, 55, 4, 66, 65, 51, 24, 24, 76, 71,
-	57, 20, 12, 3, 88, 56, 67, 60, 48, 35,
-	26, 45, 5, 13, 40, 43, 49, 79, 78, 80,
-	81, 50, 2, 87, 72, 21, 58, 42, 39, 25,
-	22, 59, 9, 61, 10, 6, 7, 68, 75, 83,
-	73, 69, 82, 44, 85, 62, 29, 27, 28, 23,
-	30, 31, 77, 86, 46, 47, 53, 52, 1,
+	32, 64, 16, 33, 4, 11, 30, 31, 8, 59,
+	95, 20, 96, 37, 83, 82, 67, 66, 38, 37,
+	72, 57, 18, 12, 3, 55, 54, 14, 90, 68,
+	61, 50, 48, 29, 22, 5, 89, 88, 40, 17,
+	43, 42, 75, 34, 87, 71, 65, 41, 23, 45,
+	13, 51, 97, 53, 79, 78, 80, 81, 93, 2,
+	92, 73, 19, 60, 62, 46, 44, 39, 69, 36,
+	35, 15, 21, 6, 7, 9, 10, 25, 52, 49,
+	26, 56, 58, 24, 63, 76, 84, 85, 91, 47,
+	86, 94, 70, 74, 77, 28, 27, 1,
 }
 var yyPact = [...]int{
 
-	18, -1000, 5, -1000, 29, -1, -3, 17, -14, -24,
-	16, -14, -1000, 52, -1000, -1000, -1000, 12, -1000, 50,
-	-1000, 52, -14, -12, -24, -27, -1000, -1000, -1000, -1000,
-	-15, -16, -1000, -1000, -1000, -1000, 49, 33, -7, -1000,
-	48, 35, 28, 25, -1000, -24, -1000, -1000, -24, 11,
-	1, -1000, 21, 15, -1000, 47, -1000, 1, 24, -1000,
-	-24, -19, 9, -1000, 23, -19, -1000, -21, -1000, 14,
-	45, -29, -1000, 13, 43, -1000, -9, -1000, -1000, -1000,
-	-1000, -1000, -24, -1000, 44, 20, 12, -1000, -1000,
+	-3, -1000, -31, -1000, 10, -25, -29, -4, 61, 17,
+	-5, 61, -1000, -19, -1000, -1000, -1000, 9, -1000, -19,
+	61, 2, 25, -1000, -1000, -1000, -1000, 60, 59, -1000,
+	-1000, -1000, -8, -1000, 56, 15, 34, 25, -1000, 20,
+	55, 37, -1000, 54, 7, 6, -1000, -1000, 17, -1000,
+	17, 0, -1, -6, -1000, -1000, -1000, -23, -1000, 52,
+	5, 17, 30, -10, -1000, 4, 30, -1000, 28, -1000,
+	-7, 50, 23, -1000, -1000, 48, -12, -1000, -1000, -1000,
+	-1000, -1000, 22, -1000, -1000, -1000, -1000, 3, 49, 47,
+	25, -20, -1000, -1000, -14, 41, -1000, -1000,
 }
 var yyPgo = [...]int{
 
-	0, 88, 3, 87, 86, 85, 84, 82, 81, 80,
-	79, 78, 77, 76, 1, 75, 0, 2, 74, 73,
-	14, 73, 43, 73, 72, 71, 70, 69, 68, 17,
-	66, 65, 64, 62, 52,
+	0, 97, 96, 95, 94, 93, 27, 92, 90, 2,
+	3, 0, 89, 88, 50, 87, 86, 1, 85, 84,
+	83, 82, 81, 80, 79, 78, 77, 76, 75, 74,
+	73, 72, 59,
 }
 var yyR1 = [...]int{
 
-	0, 9, 8, 8, 7, 7, 7, 7, 29, 20,
-	16, 16, 21, 21, 22, 22, 23, 25, 26, 27,
-	28, 28, 24, 18, 18, 17, 17, 14, 15, 15,
-	2, 3, 3, 4, 4, 6, 6, 5, 13, 11,
-	19, 19, 32, 33, 33, 30, 31, 31, 12, 12,
-	10, 10, 34, 34, 1,
+	0, 2, 3, 3, 4, 4, 4, 4, 6, 10,
+	11, 11, 11, 13, 13, 14, 14, 15, 7, 5,
+	8, 18, 18, 16, 16, 16, 17, 19, 19, 21,
+	22, 22, 24, 24, 25, 23, 12, 26, 9, 9,
+	27, 28, 28, 29, 30, 30, 20, 20, 31, 31,
+	32, 32, 1,
 }
 var yyR2 = [...]int{
 
 	0, 1, 1, 1, 1, 1, 1, 1, 1, 4,
-	1, 3, 1, 3, 1, 3, 2, 2, 2, 2,
-	0, 2, 0, 0, 1, 0, 1, 9, 1, 3,
-	6, 0, 1, 1, 3, 0, 1, 4, 5, 5,
-	0, 3, 2, 0, 2, 2, 0, 2, 1, 1,
-	0, 2, 0, 1, 7,
+	1, 3, 0, 1, 3, 1, 3, 2, 2, 2,
+	2, 0, 3, 1, 1, 4, 7, 1, 3, 6,
+	0, 2, 0, 3, 2, 5, 3, 5, 0, 4,
+	2, 0, 2, 2, 0, 2, 1, 1, 0, 2,
+	0, 1, 7,
 }
 var yyChk = [...]int{
 
-	-1000, -1, -34, 15, 17, 13, -31, -30, 21, -33,
-	-32, 22, 15, -22, -29, 26, -17, -16, -20, 31,
-	15, -22, 8, -10, 15, 9, -29, -12, -11, -13,
-	-9, -8, 18, 25, 30, -20, 32, 26, 26, 9,
-	11, 23, 9, 10, -19, 13, -6, -5, 13, -16,
-	-17, 14, -3, -4, -2, 20, 14, 15, 9, -2,
-	13, -17, -15, -14, 28, 15, 14, 13, -14, -25,
-	29, 15, 9, -26, 33, -28, 15, -7, 5, 4,
-	6, 7, -24, -27, 24, -18, -16, 9, 14,
+	-1000, -1, -32, 27, 35, 25, -30, -29, 33, -28,
+	-27, 34, 27, -14, -6, 10, -9, 22, 27, -14,
+	30, -31, 25, -6, -20, -26, -23, -2, -3, 31,
+	4, 5, -11, -10, 18, 10, 10, 27, 26, 11,
+	23, 13, -10, 20, 11, 12, 11, -12, 25, -24,
+	25, -9, -25, -9, 26, 26, -22, 27, -21, 32,
+	11, 25, -9, -19, -17, 16, 27, 26, 25, -17,
+	-7, 17, 27, 11, -5, 19, -18, -4, 7, 6,
+	8, 9, 27, 26, -16, -15, -8, 22, 15, 14,
+	25, -13, 11, 11, -11, 30, 26, 11,
 }
 var yyDef = [...]int{
 
-	52, -2, 0, 53, 0, 46, 43, 0, 0, 25,
-	0, 0, 47, 45, 14, 8, 50, 26, 10, 0,
-	44, 42, 0, 54, 0, 0, 15, 51, 48, 49,
-	0, 0, 1, 2, 3, 11, 0, 0, 0, 9,
-	0, 0, 40, 35, 39, 0, 38, 36, 25, 0,
-	31, 41, 0, 32, 33, 0, 37, 0, 0, 34,
-	25, 0, 0, 28, 0, 0, 30, 0, 29, 0,
-	0, 0, 17, 20, 0, 22, 0, 18, 4, 5,
-	6, 7, 23, 21, 0, 0, 24, 19, 27,
+	50, -2, 0, 51, 0, 44, 41, 0, 0, 38,
+	0, 0, 45, 43, 15, 8, 48, 0, 42, 40,
+	0, 52, 12, 16, 49, 46, 47, 0, 0, 1,
+	2, 3, 0, 10, 0, 0, 0, 0, 39, 0,
+	0, 0, 11, 0, 0, 32, 9, 37, 38, 35,
+	38, 0, 0, 30, 36, 33, 34, 0, 31, 0,
+	0, 38, 0, 0, 27, 0, 0, 29, 0, 28,
+	0, 0, 0, 18, 21, 0, 0, 19, 4, 5,
+	6, 7, 0, 26, 22, 23, 24, 0, 0, 0,
+	12, 17, 13, 20, 0, 0, 25, 14,
 }
 var yyTok1 = [...]int{
 
@@ -307,7 +242,7 @@ var yyTok2 = [...]int{
 	2, 3, 4, 5, 6, 7, 8, 9, 10, 11,
 	12, 13, 14, 15, 16, 17, 18, 19, 20, 21,
 	22, 23, 24, 25, 26, 27, 28, 29, 30, 31,
-	32, 33,
+	32, 33, 34, 35,
 }
 var yyTok3 = [...]int{
 	0,
@@ -652,360 +587,455 @@ yydefault:
 
 	case 1:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line parser.go.y:183
+//line parser.go.y:90
 		{
 			yyVAL.key = "AUTH"
 		}
 	case 2:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line parser.go.y:186
+//line parser.go.y:93
 		{
-			fmt.Println("0000000000000000000000000000000000000")
 			yyVAL.key = yyDollar[1].key
 		}
 	case 3:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line parser.go.y:188
+//line parser.go.y:95
 		{
 			yyVAL.key = yyDollar[1].key
 		}
 	case 4:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line parser.go.y:191
+//line parser.go.y:98
 		{
 			yyVAL.key = config.KeyMetricTypeGauge
 		}
 	case 5:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line parser.go.y:193
+//line parser.go.y:100
 		{
 			yyVAL.key = config.KeyMetricTypeCounter
 		}
 	case 6:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line parser.go.y:195
+//line parser.go.y:102
 		{
 			yyVAL.key = config.KeyMetricTypeHistogram
 		}
 	case 7:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line parser.go.y:197
+//line parser.go.y:104
 		{
 			yyVAL.key = config.KeyMetricTypeSummary
 		}
 	case 8:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line parser.go.y:200
+//line parser.go.y:107
 		{
 			yyVAL.strval = yyDollar[1].strval
 		}
 	case 9:
 		yyDollar = yyS[yypt-4 : yypt+1]
-//line parser.go.y:205
+//line parser.go.y:110
 		{
-			yyVAL.pair = newStrTuple(yyDollar[2].strval, yyDollar[4].strval)
-			fmt.Println("oOo", yyVAL.pair)
+			yyVAL.options = memconfig.NewOptionsMap()
+			// TODO(denisacostaq@gmail.com): handle errors
+			_, _ = yyVAL.options.SetString(yyDollar[2].strval, yyDollar[4].strval)
 		}
 	case 10:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line parser.go.y:207
+//line parser.go.y:117
 		{
-			yyVAL.options = newOption()
-			// TODO: Error handling
-			_, _ = yyVAL.options.SetString(yyDollar[1].pair.key, yyDollar[1].pair.val)
+			yyVAL.options = memconfig.NewOptionsMap()
+			for _, k := range yyDollar[1].options.GetKeys() {
+				// TODO(denisacostaq@gmail.com): handle errors
+				v, _ := yyDollar[1].options.GetObject(k)
+				// TODO(denisacostaq@gmail.com): handle errors
+				_, _ = yyVAL.options.SetObject(k, v)
+			}
 		}
 	case 11:
 		yyDollar = yyS[yypt-3 : yypt+1]
-//line parser.go.y:213
+//line parser.go.y:127
 		{
-			// TODO: Error handling
-			_, _ = yyDollar[1].options.SetString(yyDollar[3].pair.key, yyDollar[3].pair.val)
-			yyVAL.options = yyDollar[1].options
+			// TODO(denisacostaq@gmail.com): handle errors and previously exist
+			yyVAL.options, _ = memconfig.MergeStoresInANewOne(yyDollar[1].options, yyDollar[3].options)
 		}
 	case 12:
-		yyDollar = yyS[yypt-1 : yypt+1]
-//line parser.go.y:219
+		yyDollar = yyS[yypt-0 : yypt+1]
+//line parser.go.y:132
 		{
-			yyVAL.strlist = []string{yyDollar[1].strval}
+			yyVAL.options = nil
 		}
 	case 13:
-		yyDollar = yyS[yypt-3 : yypt+1]
-//line parser.go.y:221
-		{
-			yyVAL.strlist = append(yyDollar[1].strlist, yyDollar[3].strval)
-		}
-	case 14:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line parser.go.y:223
+//line parser.go.y:135
 		{
 			yyVAL.strlist = []string{yyDollar[1].strval}
 		}
-	case 15:
+	case 14:
 		yyDollar = yyS[yypt-3 : yypt+1]
-//line parser.go.y:225
+//line parser.go.y:137
 		{
 			yyVAL.strlist = append(yyDollar[1].strlist, yyDollar[3].strval)
 		}
-	case 16:
-		yyDollar = yyS[yypt-2 : yypt+1]
-//line parser.go.y:227
+	case 15:
+		yyDollar = yyS[yypt-1 : yypt+1]
+//line parser.go.y:140
 		{
-			yyVAL.strlist = yyDollar[2].strlist
+			yyVAL.strlist = []string{yyDollar[1].strval}
+		}
+	case 16:
+		yyDollar = yyS[yypt-3 : yypt+1]
+//line parser.go.y:142
+		{
+			yyVAL.strlist = append(yyDollar[1].strlist, yyDollar[3].strval)
 		}
 	case 17:
 		yyDollar = yyS[yypt-2 : yypt+1]
-//line parser.go.y:229
+//line parser.go.y:145
 		{
-			yyVAL.strval = yyDollar[2].strval
+			yyVAL.strlist = yyDollar[2].strlist
 		}
 	case 18:
 		yyDollar = yyS[yypt-2 : yypt+1]
-//line parser.go.y:231
+//line parser.go.y:148
 		{
-			yyVAL.strval = yyDollar[2].key
+			yyVAL.strval = yyDollar[2].strval
 		}
 	case 19:
 		yyDollar = yyS[yypt-2 : yypt+1]
-//line parser.go.y:233
+//line parser.go.y:151
 		{
-			yyVAL.strval = yyDollar[2].strval
+			yyVAL.key = yyDollar[2].key
 		}
 	case 20:
-		yyDollar = yyS[yypt-0 : yypt+1]
-//line parser.go.y:235
-		{
-			yyVAL.strval = "Metric extracted by [rextporter](https://github.com/simelo/rextporter)"
-		}
-	case 21:
 		yyDollar = yyS[yypt-2 : yypt+1]
-//line parser.go.y:239
+//line parser.go.y:154
 		{
 			yyVAL.strval = yyDollar[2].strval
 		}
-	case 22:
+	case 21:
 		yyDollar = yyS[yypt-0 : yypt+1]
-//line parser.go.y:241
+//line parser.go.y:157
 		{
-			yyVAL.strlist = nil
+			yyVAL.metrics = nil
+		}
+	case 22:
+		yyDollar = yyS[yypt-3 : yypt+1]
+//line parser.go.y:159
+		{
+			yyVAL.metrics = append(yyVAL.metrics, yyDollar[3].metric)
 		}
 	case 23:
-		yyDollar = yyS[yypt-0 : yypt+1]
-//line parser.go.y:245
+		yyDollar = yyS[yypt-1 : yypt+1]
+//line parser.go.y:162
 		{
-			yyVAL.options = nil
+			yyVAL.metric = &memconfig.MetricDef{}
+			for _, l := range yyDollar[1].strlist {
+				label := &memconfig.LabelDef{}
+				label.SetName(l)
+				yyVAL.metric.AddLabel(label)
+			}
 		}
 	case 24:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line parser.go.y:247
+//line parser.go.y:171
 		{
-			yyVAL.options = yyDollar[1].options
+			yyVAL.metric = &memconfig.MetricDef{}
+			yyVAL.metric.SetMetricDescription(yyDollar[1].strval)
 		}
 	case 25:
-		yyDollar = yyS[yypt-0 : yypt+1]
-//line parser.go.y:249
+		yyDollar = yyS[yypt-4 : yypt+1]
+//line parser.go.y:176
 		{
-			yyVAL.options = nil
+			yyVAL.metric = &memconfig.MetricDef{}
+			opts := yyVAL.metric.GetOptions()
+			for _, k := range yyDollar[3].options.GetKeys() {
+				// TODO(denisacostaq@gmail.com): handle error
+				v, _ := yyDollar[3].options.GetObject(k)
+				opts.SetObject(k, v)
+			}
 		}
 	case 26:
-		yyDollar = yyS[yypt-1 : yypt+1]
-//line parser.go.y:251
+		yyDollar = yyS[yypt-7 : yypt+1]
+//line parser.go.y:187
 		{
-			fmt.Println("ppppppppppppp")
-			yyVAL.options = yyDollar[1].options
+			var mtrDescription string
+			var mtrLabels []config.RextLabelDef
+			var mtrOptions, labelOpts config.RextKeyValueStore
+			const prex = "\"label_path:"
+			for _, optinalField := range yyDollar[6].metrics {
+				if len(optinalField.GetMetricDescription()) != 0 {
+					mtrDescription = optinalField.GetMetricDescription()
+				}
+				if len(optinalField.GetLabels()) != 0 {
+					labelOpts = memconfig.NewOptionsMap()
+					if mtrLabels == nil {
+						mtrLabels = optinalField.GetLabels()
+					} else {
+						// FIXME(denisacostaq@gmail.com): error multiple labels definitions
+					}
+				}
+				if opts := optinalField.GetOptions(); len(opts.GetKeys()) != 0 {
+					// TODO(denisacostaq@gmail.com): handle error
+					mtrOptions = memconfig.NewOptionsMap()
+					for _, k := range opts.GetKeys() {
+						// TODO(denisacostaq@gmail.com): handle errors
+						v, _ := opts.GetString(k)
+						if strings.HasPrefix(k, prex) {
+							// fmt.Println("dddddddddddddddddddddddddddddddddddddddddddddd", k)
+							if labelOpts != nil {
+								labelOpts.SetString(k, v)
+							} else {
+								// FIXME(denisacostaq@gmail.com):  handle error not labels defined
+							}
+						} else {
+							mtrOptions.SetString(k, v)
+						}
+					}
+				}
+				// spew.Dump("TTTTTTTTTTTTTT", labelOpts)
+				if len(optinalField.GetLabels()) > 0 && len(optinalField.GetLabels()) != len(labelOpts.GetKeys()) {
+					// FIXME(denisacostaq@gmail.com):  handle error labels and paths size do not match
+				}
+			}
+			if len(mtrDescription) == 0 {
+				mtrDescription = "Metric extracted by [rextporter](https://github.com/simelo/rextporter)"
+			}
+			yyVAL.metric = &memconfig.MetricDef{}
+			yyVAL.metric.SetMetricName(yyDollar[3].strval)
+			yyVAL.metric.SetMetricType(yyDollar[5].key)
+			yyVAL.metric.SetMetricDescription(mtrDescription)
+			// spew.Dump("_____________", labelOpts)
+			for _, l := range mtrLabels {
+				// TODO(denisacostaq@gmail.com): handle errors
+				str := prex + l.GetName()
+				k := str[:len(prex)] + str[len(prex)+1:]
+				lp, _ := labelOpts.GetString(k)
+				var ns config.RextNodeSolver
+				ns = &memconfig.NodeSolver{}
+				ns.SetNodePath(lp)
+				l.SetNodeSolver(ns)
+				yyVAL.metric.AddLabel(l)
+			}
+			// spew.Dump("optsoptsoptsoptsopts", $$.GetLabels())
+			if mtrOptions != nil {
+				opts := yyVAL.metric.GetOptions()
+				for _, k := range mtrOptions.GetKeys() {
+					// TODO(denisacostaq@gmail.com): handle errors
+					v, _ := mtrOptions.GetObject(k)
+					// TODO(denisacostaq@gmail.com): handle errors and previously exist
+					_, _ = opts.SetObject(k, v)
+				}
+			}
+			fmt.Println("dddddddddddddddd")
+			spew.Dump(yyVAL.metric.GetLabels())
 		}
 	case 27:
-		yyDollar = yyS[yypt-9 : yypt+1]
-//line parser.go.y:253
+		yyDollar = yyS[yypt-1 : yypt+1]
+//line parser.go.y:261
 		{
-			mm := metricDef{
-				mname: yyDollar[3].strval,
-				mtype: yyDollar[5].strval,
-				mdesc: yyDollar[6].strval,
-				mlbls: yyDollar[7].strlist,
-				opts:  yyDollar[8].options,
-			}
-			fmt.Println(mm)
-			yyVAL.metric = nil
+			yyVAL.metrics = []config.RextMetricDef{yyDollar[1].metric}
 		}
 	case 28:
-		yyDollar = yyS[yypt-1 : yypt+1]
-//line parser.go.y:265
-		{
-			yyVAL.metrics = nil /*[]metricDef{ $1 }*/
-		}
-	case 29:
 		yyDollar = yyS[yypt-3 : yypt+1]
-//line parser.go.y:267
+//line parser.go.y:263
 		{
 			yyVAL.metrics = append(yyDollar[1].metrics, yyDollar[3].metric)
 		}
-	case 30:
+	case 29:
 		yyDollar = yyS[yypt-6 : yypt+1]
-//line parser.go.y:269
+//line parser.go.y:266
 		{
-			// env := getRootEnv()
-			yyVAL.extract = nil //env.NewMetricsExtractor($2, $4, $5)
-			// for _, md := range $6 {
-			//   $$.AddMetricRule(&md)
-			// }
+			yyVAL.resource = &memconfig.ResourceDef{}
+			var opts config.RextKeyValueStore
+			if yyDollar[4].options != nil {
+				// TODO(denisacostaq@gmail.com): handle errors
+				opts, _ = yyDollar[4].options.Clone()
+			}
+			decoder := memconfig.NewDecoder(yyDollar[2].strval, opts)
+			yyVAL.resource.SetDecoder(decoder)
+			for _, mtr := range yyDollar[5].metrics {
+				yyVAL.resource.AddMetricDef(mtr)
+			}
+		}
+	case 30:
+		yyDollar = yyS[yypt-0 : yypt+1]
+//line parser.go.y:281
+		{
+			yyVAL.resource = nil
 		}
 	case 31:
-		yyDollar = yyS[yypt-0 : yypt+1]
-//line parser.go.y:277
-		{
-			yyVAL.exts = nil
-		}
-	case 32:
-		yyDollar = yyS[yypt-1 : yypt+1]
-//line parser.go.y:280
-		{
-			yyVAL.exts = yyDollar[1].exts
-		}
-	case 33:
-		yyDollar = yyS[yypt-1 : yypt+1]
+		yyDollar = yyS[yypt-2 : yypt+1]
 //line parser.go.y:284
 		{
-			fmt.Println("///////////////////////////")
-			yyVAL.exts = []core.RextMetricsExtractor{yyDollar[1].extract}
+			yyVAL.resource = yyDollar[2].resource
+		}
+	case 32:
+		yyDollar = yyS[yypt-0 : yypt+1]
+//line parser.go.y:287
+		{
+			yyVAL.resource = nil
+		}
+	case 33:
+		yyDollar = yyS[yypt-3 : yypt+1]
+//line parser.go.y:290
+		{
+			yyVAL.resource = yyDollar[2].resource
 		}
 	case 34:
-		yyDollar = yyS[yypt-3 : yypt+1]
-//line parser.go.y:286
+		yyDollar = yyS[yypt-2 : yypt+1]
+//line parser.go.y:295
 		{
-			fmt.Println("jjjjjjjjjjj")
-			yyVAL.exts = append(yyDollar[1].exts, yyDollar[3].extract)
+			yyVAL.resource = yyDollar[2].resource
+			if yyDollar[1].options != nil {
+				if yyVAL.resource == nil {
+					yyVAL.resource = &memconfig.ResourceDef{}
+				}
+				opts := yyVAL.resource.GetOptions()
+				for _, k := range yyDollar[1].options.GetKeys() {
+					// TODO(denisacostaq@gmail.com): handle errors
+					v, _ := yyDollar[1].options.GetObject(k)
+					// TODO(denisacostaq@gmail.com): handle errors and previously exist
+					_, _ = opts.SetObject(k, v)
+				}
+			}
 		}
 	case 35:
-		yyDollar = yyS[yypt-0 : yypt+1]
-//line parser.go.y:289
+		yyDollar = yyS[yypt-5 : yypt+1]
+//line parser.go.y:312
 		{
-			yyVAL.exts = nil
+			yyVAL.resource = yyDollar[5].resource
+			if yyVAL.resource == nil {
+				yyVAL.resource = &memconfig.ResourceDef{}
+			}
+			yyVAL.resource.SetResourceURI(yyDollar[4].strval)
+			switch yyDollar[2].strval {
+			// TODO(denisacostaq@gmail.com): solve this
+			case "rest_api", "forward_metrics":
+			default:
+				fmt.Println("invalid type", yyDollar[2].strval)
+			}
+			// TODO(denisacostaq@gmail.com): $1
 		}
 	case 36:
-		yyDollar = yyS[yypt-1 : yypt+1]
-//line parser.go.y:292
+		yyDollar = yyS[yypt-3 : yypt+1]
+//line parser.go.y:328
 		{
-			fmt.Println("srcsecsufixsrcsecsufixsrcsecsufix")
-			yyVAL.exts = yyDollar[1].exts
+			yyVAL.options = yyDollar[2].options
 		}
 	case 37:
-		yyDollar = yyS[yypt-4 : yypt+1]
-//line parser.go.y:297
+		yyDollar = yyS[yypt-5 : yypt+1]
+//line parser.go.y:331
 		{
-			//  fmt.Println("aaaaaaaaaaaaaa", $3)
-			//   // FIXME: Error handling
-			//   // _ = util.MergeStoresInplace(dsGetOptions(), $2)
-			//   $$ = $3
+			if yyDollar[1].key == "AUTH" {
+				yyVAL.auth = &memconfig.HTTPAuth{}
+				if yyDollar[2].strval == "rest_csrf" {
+					yyVAL.auth.SetAuthType(config.AuthTypeCSRF)
+				}
+				if yyDollar[5].options != nil {
+					opts := yyVAL.auth.GetOptions()
+					for _, k := range yyDollar[5].options.GetKeys() {
+						// TODO(denisacostaq@gmail.com): handle errors
+						v, _ := yyDollar[5].options.GetObject(k)
+						// TODO(denisacostaq@gmail.com): handle errors and previously exist
+						_, _ = opts.SetObject(k, v)
+					}
+				}
+			} else {
+				yyVAL.auth = nil
+			}
 		}
 	case 38:
-		yyDollar = yyS[yypt-5 : yypt+1]
-//line parser.go.y:305
-		{
-			fmt.Println("ttttttttttttttttt")
-			// fmt.Println("1111111111111")
-			// env := getRootEnv().env
-			// // TODO error handling
-			// ds, _ := env.NewMetricsDatasource($2)
-			// ds.SetMethod($1)
-			// ds.SetResourceLocation($4)
-			// $$ = newMainSrc(ds)
-		}
-	case 39:
-		yyDollar = yyS[yypt-5 : yypt+1]
-//line parser.go.y:316
-		{
-			fmt.Println("hhhhhhhhhhhhhhhhhhhh", yyDollar[5].options)
-			// env := getRootEnv()
-			// if defverb == 'AUTH' {
-			//   $$ = newMainDef($4, env.NewAuthStrategy($2, $5))
-			// }
-			// TODO: Error handling
-			yyVAL.mainsec = nil
-			fmt.Println("end hhhhhhhhhhhhhhhhhhhhhh")
-		}
-	case 40:
 		yyDollar = yyS[yypt-0 : yypt+1]
-//line parser.go.y:327
+//line parser.go.y:352
 		{
-			fmt.Println("LLRRRRRRRRRLLLLLLLL")
 			yyVAL.options = nil
 		}
-	case 41:
-		yyDollar = yyS[yypt-3 : yypt+1]
-//line parser.go.y:329
+	case 39:
+		yyDollar = yyS[yypt-4 : yypt+1]
+//line parser.go.y:354
 		{
-			fmt.Println("LLLLLLLLLL")
-			yyVAL.options = yyDollar[2].options
+			yyVAL.options = yyDollar[3].options
+		}
+	case 40:
+		yyDollar = yyS[yypt-2 : yypt+1]
+//line parser.go.y:364
+		{
+			yyVAL.services = nil /*$2*/
+		}
+	case 41:
+		yyDollar = yyS[yypt-0 : yypt+1]
+//line parser.go.y:366
+		{
+			yyVAL.services = nil
 		}
 	case 42:
 		yyDollar = yyS[yypt-2 : yypt+1]
-//line parser.go.y:339
+//line parser.go.y:368
 		{
-			yyVAL.strlist = yyDollar[2].strlist
+			yyVAL.services = nil /*$1*/
 		}
 	case 43:
-		yyDollar = yyS[yypt-0 : yypt+1]
-//line parser.go.y:342
+		yyDollar = yyS[yypt-2 : yypt+1]
+//line parser.go.y:371
 		{
-			yyVAL.strlist = nil
+			for _, id := range yyDollar[2].strlist {
+				srv := &memconfig.Service{}
+				srv.SetBasePath(id)
+				yyVAL.services = append(yyVAL.services, srv)
+			}
 		}
 	case 44:
-		yyDollar = yyS[yypt-2 : yypt+1]
-//line parser.go.y:344
+		yyDollar = yyS[yypt-0 : yypt+1]
+//line parser.go.y:380
 		{
-			yyVAL.strlist = yyDollar[1].strlist
+			yyVAL.services = nil
 		}
 	case 45:
 		yyDollar = yyS[yypt-2 : yypt+1]
-//line parser.go.y:347
+//line parser.go.y:382
 		{
-			fmt.Println("1111110000010101000000000000000000000000000000000011111111111111111")
-			yyVAL.strlist = yyDollar[2].strlist
+			yyVAL.services = yyDollar[1].services
 		}
 	case 46:
-		yyDollar = yyS[yypt-0 : yypt+1]
-//line parser.go.y:349
+		yyDollar = yyS[yypt-1 : yypt+1]
+//line parser.go.y:385
 		{
-			yyVAL.strlist = nil
+			service.SetAuthForBaseURL(yyDollar[1].auth)
+			yyVAL.resource = nil
 		}
 	case 47:
-		yyDollar = yyS[yypt-2 : yypt+1]
-//line parser.go.y:351
+		yyDollar = yyS[yypt-1 : yypt+1]
+//line parser.go.y:390
 		{
-			yyVAL.strlist = yyDollar[1].strlist
+			yyVAL.resource = yyDollar[1].resource
 		}
 	case 48:
-		yyDollar = yyS[yypt-1 : yypt+1]
-//line parser.go.y:353
+		yyDollar = yyS[yypt-0 : yypt+1]
+//line parser.go.y:395
 		{
-			fmt.Println("mainseeeeeeeecc 1")
-			yyVAL.mainsec = yyDollar[1].mainsec
+			yyVAL.service = nil
 		}
 	case 49:
-		yyDollar = yyS[yypt-1 : yypt+1]
-//line parser.go.y:355
-		{
-			fmt.Println("mainseeeeeeeecc 2")
-			yyVAL.mainsec = yyDollar[1].mainsec
-		}
-	case 50:
-		yyDollar = yyS[yypt-0 : yypt+1]
-//line parser.go.y:357
-		{
-			fmt.Println("mainnnnnnnnnnnnnnblk 1")
-			yyVAL.mains = nil /*[]mainSecTuple { $1 }*/
-		}
-	case 51:
 		yyDollar = yyS[yypt-2 : yypt+1]
-//line parser.go.y:359
+//line parser.go.y:397
 		{
-			fmt.Println("mainnnnnnnnnnnnnnblk 2")
-			yyVAL.mains = nil /*append($1, $3)*/
+			if yyDollar[2].resource != nil {
+				service.AddResource(yyDollar[2].resource)
+			}
+			yyVAL.service = service
 		}
-	case 54:
+	case 52:
 		yyDollar = yyS[yypt-7 : yypt+1]
-//line parser.go.y:363
+//line parser.go.y:408
 		{
+			spew.Dump(yyDollar[7].service)
+			// fmt.Println(len($7.GetResources()))
+			for _, srv := range yyDollar[4].services {
+				// service.SetName(srv)
+				fmt.Println(srv)
+			}
 			// env = $1
 			// $$ = env.NewServiceScraper()
 			// if $5 != nil {
