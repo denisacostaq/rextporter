@@ -5,9 +5,11 @@ import (
   "errors"
 
   "fmt"
+  "strings"
   "github.com/simelo/rextporter/src/config"
-  "github.com/simelo/rextporter/src/core"
-  // "github.com/davecgh/go-spew/spew"
+  "github.com/simelo/rextporter/src/memconfig"
+  "github.com/davecgh/go-spew/spew"
+  // "os"
   // "github.com/simelo/rextporter/src/util"
 )
 
@@ -16,43 +18,9 @@ var (
   ErrBlockLevelOverflow  = errors.New("Too many nested syntax levels")
 )
 
-type parserEnv struct {
-  env       core.RextEnv
-  scraper   core.RextServiceScraper 
-}
-
 type strTuple struct {
   key  string
   val  string
-}
-
-type mainSecTuple struct {
-  src  core.RextDataSource
-  key  string
-  val  interface{}
-}
-
-type metricDef struct {
-  mname string
-  mtype string
-  mdesc string
-  mlbls []string
-  opts  core.RextKeyValueStore
-}
-
-// FIXME : Not global. Parser stack ? TLS ?
-var root    parserEnv
-var metric  metricDef
-
-// TODO: metricDef should implement core.RextMetricDef
-
-func value_for_str(str string) string {
-  // FIXME: Support string literals
-  return str[1: len(str) - 1]
-}
-
-func newOption() core.RextKeyValueStore {
-  return config.NewOptionsMap()
 }
 
 func newStrTuple(s1, s2 string) *strTuple {
@@ -62,73 +30,30 @@ func newStrTuple(s1, s2 string) *strTuple {
   }
 }
 
-func newMainDef(key string, value interface{}) *mainSecTuple {
-  return &mainSecTuple{
-    src: nil,
-    key: key,
-    val: value,
-  }
-}
-
-func newMainSrc(src core.RextDataSource) *mainSecTuple {
-  return &mainSecTuple{
-    src: src,
-    key: "",
-    val: nil,
-  }
-}
-
-func getRootEnv() *parserEnv {
-  return &root
-}
-
-func (m *metricDef) GetMetricName() string {
-  return m.mname
-}
-
-func (m *metricDef) GetMetricType() string {
-  return m.mtype
-}
-
-func (m *metricDef) GetMetricDescription() string {
-  return m.mdesc
-}
-
-func (m *metricDef) GetMetricLabels() []string {
-  return m.mlbls
-}
-
-func (m *metricDef) SetMetricName(name string) {
-  m.mname = name
-}
-
-func (m *metricDef) SetMetricType(typeid string) {
-  m.mtype = typeid
-}
-
-func (m *metricDef) SetMetricDescription(desc string) {
-  m.mdesc = desc
-}
-
-func (m *metricDef) SetMetricLabels(labels []string) {
-  m.mlbls = labels
-}
-
-func (m *metricDef) GetOptions() core.RextKeyValueStore {
-  return nil
+// FIXME : Not global. Parser stack ? TLS ?
+var root config.RextRoot
+var service config.RextServiceDef
+func init() {
+  // TODO(denisacostaq@gmail.com): services
+  root = memconfig.NewRootConfig(nil)
+  service = &memconfig.Service{}
 }
 
 %}
 
 %union{
-  root    core.RextServiceScraper
-  options core.RextKeyValueStore
-  mains   []mainSecTuple
-  mainsec *mainSecTuple
-  exts    []core.RextMetricsExtractor
-  extract core.RextMetricsExtractor
-  metrics []core.RextMetricDef
-  metric  core.RextMetricDef
+  root config.RextRoot
+  service config.RextServiceDef
+  services []config.RextServiceDef
+  resource config.RextResourceDef
+  resources []config.RextResourceDef
+  decoder config.RextDecoderDef
+  nodeSolver config.RextNodeSolver
+  metric config.RextMetricDef
+  metrics []config.RextMetricDef
+  label config.RextLabelDef
+  auth config.RextAuthDef
+  options config.RextKeyValueStore
   key     string
   strval  string
   strlist []string
@@ -138,55 +63,37 @@ func (m *metricDef) GetOptions() core.RextKeyValueStore {
 
 %start dataset
 
-%token <key> COUNTER GAUGE HISTOGRAM SUMMARY
-%token <strval> COMMA
-%token <strval> STR_LITERAL RESOURCE_PATH
-%token AS
-%token BIE BLK EOB EOL CTX
-%token DATASET
-%token DEFINE_AUTH
-%token DESCRIPTION
-%token EXTRACT_USING
-%token FOR_SERVICE
-%token FOR_STACK
-%token FROM
-%token HELP
-%token GET
-%token<strval> IDENTIFIER
-%token LABELS
-%token METRIC
-%token NAME
-%token POST
-%token SET
-%token TO
-%token TYPE
+%token <key> GET POST COUNTER GAUGE HISTOGRAM SUMMARY
+%token <strval> IDENTIFIER STR_LITERAL RESOURCE_PATH
+%token FROM HELP LABELS METRIC NAME SET TYPE TO DESCRIPTION WITH_OPTIONS AS
+%token BIE BLK EOB EOL CTX EOF COMMA DEFINE_AUTH EXTRACT_USING FOR_SERVICE FOR_STACK DATASET
 
-%type <extract> extblk
-%type <exts> sseco ssec srcsecsufix srcsecsufixo 
-%type <key>     mtvalue srcverb GET POST defverb// mfname
-%type <mains>   mainblk
-%type <mainsec> defsec mainsec srcsec
-%type <metric>  metsec
-%type <metrics> metblk
-%type <options> optsblk optblkr optblkl optblko
-%type <pair>    setcls
-// %type <root>    dataset
-%type <strlist> strlst idlst mlabels mlablso // stkcls stkclso srvcls srvclso
-%type <strval>  mname mtype mhelp mhelpo // id 
-%type <strval> id
-%type <strlist> srvcls srvclso srvstk srvstko
 
+// defverb srcverb mtvalue id setcls optsblk strlst idlst mlabels mname mtype mhelp optional_metric_fieldso optional_metric_fields metsec metblk extblk sseco ssec srcsecsufixo srcsecsufix srcsec auth_optso defsec optblko srvstk srvstko srvcls srvclso mainsec mainblk eolo 
+//         eolo 
+%type <key> defverb srcverb mtvalue mtype
+%type <strval> id mname mhelp
+// %type <pair> 
+%type <options> optblko setcls optsblk auth_optso
+%type <strlist> strlst idlst mlabels
+%type <metric> optional_metric_fields metsec
+%type <metrics> optional_metric_fieldso metblk
+%type <resource> mainsec extblk sseco srcsec srcsecsufixo srcsecsufix
+%type <auth> defsec
+%type <services> srvstk srvstko // FIXME(denisacostaq@gmail.com): remove this
+%type <services> srvcls srvclso
+%type <service> mainblk
 
 %%
 
 defverb : DEFINE_AUTH
           { $$ = "AUTH" }
-        ;
+
 srcverb : GET
-          { fmt.Println("0000000000000000000000000000000000000"); $$ = $1 }
+          { $$ = $1 }
         | POST
           { $$ = $1 }
-        ;
+
 mtvalue : GAUGE
           { $$ = config.KeyMetricTypeGauge }
         | COUNTER
@@ -195,173 +102,316 @@ mtvalue : GAUGE
           { $$ = config.KeyMetricTypeHistogram }
         | SUMMARY
           { $$ = config.KeyMetricTypeSummary }
-        ;
-id      : IDENTIFIER
-          { $$ = $1 }
-        // | STR
-        //   { $$ = value_for_str($1) }
-//         ;
-setcls  : SET STR_LITERAL TO STR_LITERAL
-          { $$ = newStrTuple($2, $4); fmt.Println("oOo", $$); }
+
+id : IDENTIFIER
+     { $$ = $1 }
+
+setcls : SET STR_LITERAL TO STR_LITERAL
+         { 
+           $$ = memconfig.NewOptionsMap()
+            // TODO(denisacostaq@gmail.com): handle errors
+            _, _ = $$.SetString($2, $4)
+         }
+
 optsblk : setcls
           {
-            $$ = newOption()
-            // TODO: Error handling
-            _, _ = $$.SetString($1.key, $1.val)
+            $$ = memconfig.NewOptionsMap()
+            for _, k := range $1.GetKeys() {
+              // TODO(denisacostaq@gmail.com): handle errors
+              v, _ := $1.GetObject(k)
+              // TODO(denisacostaq@gmail.com): handle errors
+              _, _ = $$.SetObject(k, v)
+            }
           }
         | optsblk EOL setcls
           {
-            // TODO: Error handling
-            _, _ = $1.SetString($3.key, $3.val)
-            $$ = $1
+            // TODO(denisacostaq@gmail.com): handle errors and previously exist
+            $$, _ = memconfig.MergeStoresInANewOne($1, $3)
           }
+        | /* empty */
+          { $$ = nil }
+
 strlst : STR_LITERAL
-          { $$ = []string{ $1 } }
-        | strlst COMMA STR_LITERAL
-          { $$ = append($1, $3) }
-idlst   : id
-          { $$ = []string{ $1 } }
-        | idlst COMMA id
-          { $$ = append($1, $3) }
+         { $$ = []string{ $1 } }
+       | strlst COMMA STR_LITERAL
+         { $$ = append($1, $3) }
+
+idlst : id
+        { $$ = []string{ $1 } }
+      | idlst COMMA id
+        { $$ = append($1, $3) }
+
 mlabels : LABELS strlst
           { $$ = $2 }
-mname   : NAME STR_LITERAL
-          { $$ = $2 }
-mtype   : TYPE mtvalue
-          { $$ = $2 }
-mhelp   : HELP STR_LITERAL
-          { $$ = $2 }
-mhelpo  : /* empty */
+
+mname : NAME STR_LITERAL
+        { $$ = $2 }
+
+mtype : TYPE mtvalue
+        { $$ = $2 }
+
+mhelp : HELP STR_LITERAL
+        { $$ = $2 }
+
+optional_metric_fieldso : /* empty */
+                         { $$ = nil }
+                       | optional_metric_fieldso EOL optional_metric_fields
+                         { $$ = append($$, $3) }
+
+optional_metric_fields : mlabels
+                         {
+                           $$ = &memconfig.MetricDef{}
+                           for _, l := range $1 {
+                             label := &memconfig.LabelDef{}
+                             label.SetName(l)
+                             $$.AddLabel(label)
+                           }
+                          }
+                       | mhelp
+                         { 
+                           $$ = &memconfig.MetricDef{}
+                           $$.SetMetricDescription($1)
+                         }
+                       | WITH_OPTIONS BLK optsblk EOB
+                         {
+                           $$ = &memconfig.MetricDef{}
+                           opts := $$.GetOptions()
+                           for _, k := range $3.GetKeys() {
+                             // TODO(denisacostaq@gmail.com): handle error
+                             v, _ := $3.GetObject(k)
+                             opts.SetObject(k, v)
+                           }
+                         }
+
+metsec : METRIC BLK mname EOL mtype optional_metric_fieldso EOB
           {
-            $$ = "Metric extracted by [rextporter](https://github.com/simelo/rextporter)"
-          }
-        | EOL mhelp
-          { $$ = $2 }
-mlablso : /* empty */
-           { $$ = nil }
-        // | EOL mlabels
-        //   { $$ = $2 }
-optblkl : /* empty */
-          { $$ = nil }
-        | optsblk
-          { $$ = $1 }
-optblkr : /* empty */
-          { $$ = nil }
-        | optsblk
-          { fmt.Println("ppppppppppppp"); $$ = $1 }
-metsec  : METRIC BLK mname EOL mtype mhelpo mlablso optblkl EOB
-          {
-            mm := metricDef{
-              mname: $3,
-              mtype: $5,
-              mdesc: $6,
-              mlbls: $7,
-              opts:  $8,
+            var mtrDescription string
+            var mtrLabels []config.RextLabelDef
+            var mtrOptions, labelOpts config.RextKeyValueStore
+            const prex = "\"label_path:"
+            for _, optinalField := range $6 {
+              if len(optinalField.GetMetricDescription()) != 0 {
+                mtrDescription = optinalField.GetMetricDescription()
+              }
+              if len(optinalField.GetLabels()) != 0 {
+                labelOpts = memconfig.NewOptionsMap()
+                if mtrLabels == nil {
+                  mtrLabels = optinalField.GetLabels()
+                } else {
+                  // FIXME(denisacostaq@gmail.com): error multiple labels definitions
+                }
+              }
+              if opts := optinalField.GetOptions(); len(opts.GetKeys()) != 0 {
+                  // TODO(denisacostaq@gmail.com): handle error
+                  mtrOptions = memconfig.NewOptionsMap()
+                  for _, k := range opts.GetKeys() {
+                    // TODO(denisacostaq@gmail.com): handle errors
+                    v, _ := opts.GetString(k)
+                    if strings.HasPrefix(k, prex) {
+                      // fmt.Println("dddddddddddddddddddddddddddddddddddddddddddddd", k)
+                      if labelOpts != nil {
+                        labelOpts.SetString(k, v)
+                      } else {
+                        // FIXME(denisacostaq@gmail.com):  handle error not labels defined
+                      }
+                    } else {
+                      mtrOptions.SetString(k, v)
+                    }
+                  }
+              }
+              // spew.Dump("TTTTTTTTTTTTTT", labelOpts)
+              if len(optinalField.GetLabels()) > 0 && len(optinalField.GetLabels()) != len(labelOpts.GetKeys()) {
+                // FIXME(denisacostaq@gmail.com):  handle error labels and paths size do not match
+              }
             }
-            fmt.Println(mm)
-            $$ = nil
+            if len(mtrDescription) == 0 {
+              mtrDescription = "Metric extracted by [rextporter](https://github.com/simelo/rextporter)"
+            }
+            $$ = &memconfig.MetricDef{}
+            $$.SetMetricName($3)
+            $$.SetMetricType($5)
+            $$.SetMetricDescription(mtrDescription)
+            // spew.Dump("_____________", labelOpts)
+            for _, l := range mtrLabels {
+              // TODO(denisacostaq@gmail.com): handle errors
+              str := prex + l.GetName()
+              k := str[:len(prex)] + str[len(prex)+1:]
+              lp, _ := labelOpts.GetString(k)
+              var ns config.RextNodeSolver
+              ns = &memconfig.NodeSolver{}
+              ns.SetNodePath(lp)
+              l.SetNodeSolver(ns)
+              $$.AddLabel(l)
+            }
+            // spew.Dump("optsoptsoptsoptsopts", $$.GetLabels())
+            if mtrOptions != nil {
+              opts := $$.GetOptions()
+              for _, k := range mtrOptions.GetKeys() {
+                // TODO(denisacostaq@gmail.com): handle errors
+                v, _ := mtrOptions.GetObject(k)
+                // TODO(denisacostaq@gmail.com): handle errors and previously exist
+                _, _ = opts.SetObject(k, v)
+              }
+            }
+            fmt.Println("dddddddddddddddd")
+            spew.Dump($$.GetLabels())
           }
-metblk  : metsec
-          { $$ = nil; /*[]metricDef{ $1 }*/ }
-        | metblk EOL metsec
-          { $$ = append($1, $3) }
-extblk  : EXTRACT_USING STR_LITERAL BLK optblkr metblk EOB
+
+metblk : metsec
+         { $$ = []config.RextMetricDef{$1} }
+       |  metblk EOL metsec
+         { $$ = append($1, $3) }
+
+extblk : EXTRACT_USING STR_LITERAL BLK optblko metblk EOB
           {
-            // env := getRootEnv()
-            $$ = nil //env.NewMetricsExtractor($2, $4, $5)
-            // for _, md := range $6 {
-            //   $$.AddMetricRule(&md)
-            // }
+            $$ = &memconfig.ResourceDef{}
+            var opts config.RextKeyValueStore
+            if $4 != nil {
+              // TODO(denisacostaq@gmail.com): handle errors
+              opts, _ = $4.Clone()
+            }
+            decoder := memconfig.NewDecoder($2, opts)
+            $$.SetDecoder(decoder)
+            for _, mtr := range $5 {
+              $$.AddMetricDef(mtr)
+            }
           }
+
 sseco : /* empty */
         { $$ = nil }
       |
-        ssec
-        {
-          $$ = $1;
-        }
-ssec    : extblk
-          { fmt.Println("///////////////////////////"); $$ = []core.RextMetricsExtractor{ $1 } }
-        | ssec EOL extblk
-          { fmt.Println("jjjjjjjjjjj"); $$ = append($1, $3) }
+        EOL extblk
+        { $$ = $2 }
 
 srcsecsufixo : /* empty */
                { $$ = nil }
              |
-               srcsecsufix
-               { 
-                 fmt.Println("srcsecsufixsrcsecsufixsrcsecsufix")
-                 $$ = $1
+               BLK srcsecsufix EOB
+               {
+                 $$ = $2
                }
-there is an error here
-srcsecsufix : BLK optblkr sseco EOB
-             {
-              //  fmt.Println("aaaaaaaaaaaaaa", $3)
-              //   // FIXME: Error handling
-              //   // _ = util.MergeStoresInplace(dsGetOptions(), $2)
-              //   $$ = $3
-             }
 
-srcsec  : srcverb IDENTIFIER FROM RESOURCE_PATH srcsecsufixo
-          {
-            fmt.Println("ttttttttttttttttt")
-            // fmt.Println("1111111111111")
-            // env := getRootEnv().env
-            // // TODO error handling
-            // ds, _ := env.NewMetricsDatasource($2)
-            // ds.SetMethod($1)
-            // ds.SetResourceLocation($4)
-            // $$ = newMainSrc(ds)
-          }
-defsec  : defverb IDENTIFIER AS STR_LITERAL optblko
-          {
-            fmt.Println("hhhhhhhhhhhhhhhhhhhh", $5)
-            // env := getRootEnv()
-            // if defverb == 'AUTH' {
-            //   $$ = newMainDef($4, env.NewAuthStrategy($2, $5))
-            // }
-            // TODO: Error handling
+srcsecsufix : optblko sseco
+            {
+              $$ = $2
+              if $1 != nil {
+                if $$ == nil {
+                  $$ = &memconfig.ResourceDef{}
+                }
+                opts := $$.GetOptions()
+                for _, k := range $1.GetKeys() {
+                  // TODO(denisacostaq@gmail.com): handle errors
+                  v, _ := $1.GetObject(k)
+                  // TODO(denisacostaq@gmail.com): handle errors and previously exist
+                  _, _ = opts.SetObject(k, v)
+                }
+              }
+            }
+
+srcsec : srcverb IDENTIFIER FROM RESOURCE_PATH srcsecsufixo
+         {
+           $$ = $5
+           if $$ == nil {
+             $$ = &memconfig.ResourceDef{}
+           }
+           $$.SetResourceURI($4)
+           switch $2 {
+             // TODO(denisacostaq@gmail.com): solve this
+             case "rest_api", "forward_metrics":
+             default:
+               fmt.Println("invalid type", $2)
+           }
+           // TODO(denisacostaq@gmail.com): $1
+         }
+
+auth_optso : BLK optblko EOB
+             { $$ = $2 }
+
+defsec : defverb IDENTIFIER AS STR_LITERAL auth_optso
+         {
+          if $1 == "AUTH" {
+            $$ = &memconfig.HTTPAuth{}
+            if $2 == "rest_csrf" {
+              $$.SetAuthType(config.AuthTypeCSRF)
+            }
+            if $5 != nil {
+                opts := $$.GetOptions()
+                for _, k := range $5.GetKeys() {
+                  // TODO(denisacostaq@gmail.com): handle errors
+                  v, _ := $5.GetObject(k)
+                  // TODO(denisacostaq@gmail.com): handle errors and previously exist
+                  _, _ = opts.SetObject(k, v)
+                }
+            }
+          } else {
             $$ = nil
-            fmt.Println("end hhhhhhhhhhhhhhhhhhhhhh")
           }
+         }
+
 optblko : /* empty */
-          { fmt.Println("LLRRRRRRRRRLLLLLLLL"); $$ = nil }
-        | BLK optsblk EOB
-          { fmt.Println("LLLLLLLLLL"); $$ = $2 }
-// stkcls  : 'FOR STACK' idlst
-//           { $$ = $2 }
+          { $$ = nil }
+        | WITH_OPTIONS BLK optsblk EOB
+          { $$ = $3 }
+
+// stkcls : 'FOR STACK' idlst
+//          { $$ = nil /*$2*/ }
 // stkclso : /* empty */
 //           { $$ = nil }
 //         | stkcls EOL
-//           { $$ = $1 }
+//           { $$ = nil /*$1*/ }
 
-
-srvstk  : FOR_STACK idlst
-          { $$ = $2 }
-
+srvstk : FOR_STACK idlst
+         { $$ = nil/*$2*/ }
 srvstko : /* empty */
           { $$ = nil }
         | srvstk EOL
-          { $$ = $1 }
+          { $$ = nil/*$1*/ }
 
-srvcls  : FOR_SERVICE idlst
-          { fmt.Println("1111110000010101000000000000000000000000000000000011111111111111111"); $$ = $2 }
+srvcls : FOR_SERVICE idlst
+         { 
+            for _, id := range $2 {
+              srv := &memconfig.Service{}
+              srv.SetBasePath(id)
+              $$ = append($$, srv)
+            } 
+         }
+
 srvclso : /* empty */
           { $$ = nil }
         | srvcls EOL
           { $$ = $1 }
+
 mainsec : defsec
-          { fmt.Println("mainseeeeeeeecc 1"); $$ = $1 }
-        | srcsec
-          { fmt.Println("mainseeeeeeeecc 2"); $$ = $1 }
-mainblk : /* empty */
-          { fmt.Println("mainnnnnnnnnnnnnnblk 1"); $$ = nil /*[]mainSecTuple { $1 }*/ }
-        | mainblk mainsec
-          { fmt.Println("mainnnnnnnnnnnnnnblk 2"); $$ = nil; /*append($1, $3)*/ }
-eolo    : /* empty */
-        | EOL
-dataset : /*CTX*/ eolo DATASET BLK srvclso srvstko optblkr mainblk //EOB eolo
           {
+            service.SetAuthForBaseURL($1)
+            $$ = nil
+          }
+        | srcsec
+          {
+            $$ = $1
+          }
+
+mainblk : /* empty */
+          { $$ = nil }
+        | mainblk mainsec
+          {
+            if $2 != nil {
+              service.AddResource($2)
+            }
+            $$ = service
+          }
+
+eolo : /* empty */
+     | EOL
+// eol_or_eof : EOL | EOF
+dataset : eolo DATASET BLK srvclso srvstko optblko mainblk //EOB eolo
+          {
+            spew.Dump($7)
+            // fmt.Println(len($7.GetResources()))
+            for _, srv := range $4 {
+              // service.SetName(srv)
+              fmt.Println(srv)
+            }
             // env = $1
             // $$ = env.NewServiceScraper()
             // if $5 != nil {
