@@ -1,5 +1,5 @@
 %{
-package main
+package grammar
 
 import (
   "errors"
@@ -8,8 +8,8 @@ import (
   "strings"
   "github.com/simelo/rextporter/src/config"
   "github.com/simelo/rextporter/src/memconfig"
-  "github.com/davecgh/go-spew/spew"
-  // "os"
+  // "github.com/davecgh/go-spew/spew"
+  "os"
   // "github.com/simelo/rextporter/src/util"
 )
 
@@ -254,7 +254,7 @@ metsec : METRIC BLK mname EOL mtype optional_metric_fieldso EOB
               }
             }
             fmt.Println("dddddddddddddddd")
-            spew.Dump($$.GetLabels())
+            // spew.Dump($$.GetLabels())
           }
 
 metblk : metsec
@@ -329,23 +329,23 @@ auth_optso : BLK optblko EOB
 
 defsec : defverb IDENTIFIER AS STR_LITERAL auth_optso
          {
-          if $1 == "AUTH" {
-            $$ = &memconfig.HTTPAuth{}
-            if $2 == "rest_csrf" {
-              $$.SetAuthType(config.AuthTypeCSRF)
-            }
-            if $5 != nil {
-                opts := $$.GetOptions()
-                for _, k := range $5.GetKeys() {
-                  // TODO(denisacostaq@gmail.com): handle errors
-                  v, _ := $5.GetObject(k)
-                  // TODO(denisacostaq@gmail.com): handle errors and previously exist
-                  _, _ = opts.SetObject(k, v)
-                }
-            }
-          } else {
+        //   if $1 == "AUTH" {
+        //     $$ = &memconfig.HTTPAuth{}
+        //     if $2 == "rest_csrf" {
+        //       $$.SetAuthType(config.AuthTypeCSRF)
+        //     }
+        //     if $5 != nil {
+        //         opts := $$.GetOptions()
+        //         for _, k := range $5.GetKeys() {
+        //           // TODO(denisacostaq@gmail.com): handle errors
+        //           v, _ := $5.GetObject(k)
+        //           // TODO(denisacostaq@gmail.com): handle errors and previously exist
+        //           _, _ = opts.SetObject(k, v)
+        //         }
+        //     }
+        //   } else {
             $$ = nil
-          }
+        //   }
          }
 
 optblko : /* empty */
@@ -393,10 +393,10 @@ mainsec : defsec
 
 mainblk : /* empty */
           { $$ = nil }
-        | mainblk mainsec
+        | mainblk EOL mainsec
           {
-            if $2 != nil {
-              service.AddResource($2)
+            if $3 != nil {
+              service.AddResource($3)
             }
             $$ = service
           }
@@ -404,9 +404,9 @@ mainblk : /* empty */
 eolo : /* empty */
      | EOL
 // eol_or_eof : EOL | EOF
-dataset : eolo DATASET BLK srvclso srvstko optblko mainblk //EOB eolo
+dataset : eolo DATASET BLK srvclso srvstko optblko mainblk EOB eolo
           {
-            spew.Dump($7)
+            // spew.Dump($7)
             // fmt.Println(len($7.GetResources()))
             for _, srv := range $4 {
               // service.SetName(srv)
@@ -438,3 +438,18 @@ dataset : eolo DATASET BLK srvclso srvstko optblko mainblk //EOB eolo
             // }
           }
 %%
+
+func Parse() int {
+  yyErrorVerbose = true
+	filename := "/usr/share/gocode/src/github.com/simelo/rextporter/src/rxt/testdata/skyexample.rxt"
+	file, err := os.Open(filename)
+	if err != nil {
+		panic(err)
+	}
+  lex := NewLexer(file)
+  state := lexerState{}
+  cl := NewCustomLexer(lex, &state)
+	e := yyParse(cl)
+	fmt.Println("lexer -- ", "Return code:", e)
+  return e
+}

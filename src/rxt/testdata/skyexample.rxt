@@ -3,10 +3,11 @@ DATASET
     FOR STACK   skyfiber   
 
     DEFINE AUTH rest_csrf AS "skyauth"
-        SET "url" TO "/api/v1/csrf"
-        SET "method" TO "GET"
-        SET "header" TO "X-CSRF-Token"
-        SET "json_path" TO "csrf_token"
+        WITH OPTIONS
+            SET "url" TO "/api/v1/csrf"
+            SET "method" TO "GET"
+            SET "header" TO "X-CSRF-Token"
+            SET "json_path" TO "csrf_token"
 
     GET forward_metrics FROM '/api/v2/metrics'
         SET "prefix" TO "skycoinexample"

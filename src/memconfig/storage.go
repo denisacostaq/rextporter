@@ -64,3 +64,31 @@ func (m OptionsMap) Clone() (config.RextKeyValueStore, error) {
 	}
 	return clone, nil
 }
+
+// MergeStoresInplace to update key / values in destination with those in source
+func MergeStoresInplace(dst, src config.RextKeyValueStore) (err error) {
+	var value interface{}
+	err = nil
+	for _, k := range src.GetKeys() {
+		if value, err = src.GetObject(k); err == nil {
+			if _, err = dst.SetObject(k, value); err != nil {
+				return
+			}
+		} else {
+			return
+		}
+	}
+	return
+}
+
+// MergeStoresInANewOne create a new storage with the content of src1 and src2 merged
+func MergeStoresInANewOne(src1, src2 config.RextKeyValueStore) (res config.RextKeyValueStore, err error) {
+	res = NewOptionsMap()
+	if err := MergeStoresInplace(res, src1); err != nil {
+		return res, err
+	}
+	if err := MergeStoresInplace(res, src2); err != nil {
+		return res, err
+	}
+	return res, nil
+}

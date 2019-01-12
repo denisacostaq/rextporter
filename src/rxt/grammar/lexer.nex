@@ -1,18 +1,19 @@
 
 <                     { if !state.started { state.started = true; if retVal(emitObj("CTX", state.rootEnv)) != 0 { return } } }
-/[#].*\n/             { /* eat up comments */ }
-/,[ \n\t]*/           { if retVal(emitStr("PNC", token()[:1])) != 0 { return } }
-/[\n][ \t\n]*/        { indent( token() ); if retVal(emitInd()) != 0 { return } }
-/[ \t]+/              { /* eat up whitespace */ }
-/DATASET|FOR SERVICE|FOR STACK|DEFINE AUTH|AS|SET|TO|GET|POST|FROM|EXTRACT USING|METRIC|NAME|TYPE|GAUGE|COUNTER|HISTOGRAM|SUMMARY|DESCRIPTION|LABELS/ { if retVal(emitStr("KEY", token())) != 0 { return } }
-/"[^"]*"/             { if retVal(emitStr("STR", token())) != 0 { return } }
-/'[^']*'/             { if retVal(emitStr("STR", token())) != 0 { return } }
-/[a-z_][a-z0-9_]*/    { if retVal(emitStr("VAR", token())) != 0 { return } }
-/./                   { emitErr("Unexpected token " + token()) }
->                     { /* nothing to do at end of file */ }
+/[#].*\n/             { fmt.Println("LEXER", yylex.Line() + 1, yylex.Text()); /* eat up comments */ }
+/,[ \n\t]*/           { fmt.Println("LEXER", yylex.Line() + 1, yylex.Text()); if retVal(emitStr("PNC", token()[:1])) != 0 { return } }
+/[\n][ \t\n]*/        { fmt.Println("LEXER", yylex.Line() + 1, yylex.Text()); indent( token() ); if retVal(emitInd()) != 0 { return } }
+/[ \t]+/              { fmt.Println("LEXER", yylex.Line() + 1, yylex.Text()); /* eat up whitespace */ }
+/WITH OPTIONS|DATASET|FOR SERVICE|FOR STACK|DEFINE AUTH|AS|SET|TO|GET|POST|FROM|EXTRACT USING|METRIC|NAME|TYPE|GAUGE|COUNTER|HISTOGRAM|SUMMARY|DESCRIPTION|LABELS/ { fmt.Println("LEXER", yylex.Line() + 1, yylex.Text()); if retVal(emitStr("KEY", token())) != 0 { return } }
+/"[^"]*"/             { fmt.Println("LEXER", yylex.Line() + 1, yylex.Text()); if retVal(emitStr("STR", token())) != 0 { return } }
+/'[^']*'/             { fmt.Println("LEXER", yylex.Line() + 1, yylex.Text()); if retVal(emitStr("STR", token())) != 0 { return } }
+/[a-z_][a-z0-9_]*/    { fmt.Println("LEXER", yylex.Line() + 1, yylex.Text()); if retVal(emitStr("VAR", token())) != 0 { return } }
+/./                   { fmt.Println("LEXER", yylex.Line() + 1, yylex.Text()); emitErr("Unexpected token " + token()) }
+>                     { fmt.Println("LEXER", yylex.Line() + 1, yylex.Text()); /* nothing to do at end of file */ }
 //
 package grammar
 import "os"
+import "fmt"
 
 func (lex *Lexer) emitIndentTokens(state *lexerState) int {
   for state.nextIndent < len(state.pendIndent) {
